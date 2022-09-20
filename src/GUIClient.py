@@ -82,7 +82,7 @@ with open(abiFolder+"/"+"accountRules.json") as file:
 ##os.environ["ZITI_IDENTITIES"] = idFolder+"/"+"myId.json"
 os.environ["ZITI_IDENTITIES"] = ""
 
-rpcURL = "http://localhost:105/"
+rpcURL = "http://localhost:3003/"
 
 
 from openziti import enroll as ztenroll ##Environment variable is acting weird.
