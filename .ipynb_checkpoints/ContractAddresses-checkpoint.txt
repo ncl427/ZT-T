@@ -1,0 +1,45 @@
+ 
+4_deploy_account_ingress_rules_contract.js
+==========================================
+   > AccountIngress contract initialised at address = 0x0000000000000000000000000000000000008888 version=0
+   > Updated AccountIngress with Admin address = 0x06Ab2d5326aDAA4F630a159FC981a57b51649179
+ 
+ Replacing 'AccountStorage'
+   --------------------------
+   > transaction hash:    0x666caae365772f17113ce7aedcd5119588c308502da87571a9ffaa879a7dc661
+   > Blocks: 0            Seconds: 12
+   > contract address:    0x25D35030e5B5c898d6E71Aed5f5e186a5aeD2704
+   > block number:        784361
+   > block timestamp:     1659597689
+   > account:             0x926a88d458938A76D478212B7f6fDabA1cEC996D
+   > balance:             175.999895470420135
+   > gas used:            2165158 (0x2109a6)
+   > gas price:           0.000001 gwei
+   > value sent:          0 ETH
+   > total cost:          0.000000002165158 ETH
+
+   > Deployed AccountStorage contract to address = 0x25D35030e5B5c898d6E71Aed5f5e186a5aeD2704
+
+   Replacing 'AccountRules'
+   ------------------------
+   > transaction hash:    0xf845dc9118e12062d144274f28c71109f0984d334e2079d150b9db1796b43f9e
+   > Blocks: 0            Seconds: 12
+   > contract address:    0x6f5db79B2b529bC7F6fc940A12cc08C87CeBBce6
+   > block number:        784362
+   > block timestamp:     1659597704
+   > account:             0x926a88d458938A76D478212B7f6fDabA1cEC996D
+   > balance:             175.999895468240697
+   > gas used:            2179438 (0x21416e)
+   > gas price:           0.000001 gwei
+   > value sent:          0 ETH
+   > total cost:          0.000000002179438 ETH
+
+   > Rules deployed with AccountIngress.address = 0x0000000000000000000000000000000000008888
+   > and storageAddress = 0x25D35030e5B5c898d6E71Aed5f5e186a5aeD2704
+   >>> Set storage owner to Rules.address 0x6f5db79B2b529bC7F6fc940A12cc08C87CeBBce6
+   > Adding Initial Allowlisted Accounts ...
+0x926a88d458938A76D478212B7f6fDabA1cEC996D,  0x3E81987ae2aD50ab933971f2346eA37aDdDc5057,  0x632b1DdE45dF4b05b4E327368cF16D6EeFc76190,  0xc9e93b4E813c6818975ea166B0CfEc001454aD0B,0xec41013c2C91F2E2Cd0450F6faf38d74141b90F5,0x818474329A6Eb27eb9c7B497bD5356A81D6b45BC,0x9FA60eBAd5dda9635e5D889De9E7C6EC5A156F3E,0xe542D6B2f22Fa8acA8de6bB1B65EC0a6028E5cA6,0xA58bd1265a5280215560F8E6Fb0315dD34AB908f
+   > Initial Allowlisted Accounts added: 0x926a88d458938a76d478212b7f6fdaba1cec996d,0x3e81987ae2ad50ab933971f2346ea37adddc5057,0x632b1dde45df4b05b4e327368cf16d6eefc76190,0xc9e93b4e813c6818975ea166b0cfec001454ad0b,0xec41013c2c91f2e2cd0450f6faf38d74141b90f5,0x818474329a6eb27eb9c7b497bd5356a81d6b45bc,0x9fa60ebad5dda9635e5d889de9e7c6ec5a156f3e,0xe542d6b2f22fa8aca8de6bb1b65ec0a6028e5ca6,0xa58bd1265a5280215560f8e6fb0315dd34ab908f
+   > Updated AccountIngress contract with Rules address = 0x6f5db79B2b529bC7F6fc940A12cc08C87CeBBce6
+
+> Final cost:          0.000000004666928 ETH
