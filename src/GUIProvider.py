@@ -38,7 +38,7 @@ import subprocess
 import PySimpleGUI as sg
 import re
 import jwt
-import win32serviceutil
+#import win32serviceutil
 import psutil
 
 
@@ -175,7 +175,7 @@ def createIdentity(secretMessage):
     jsonobj = {
         "signature": signedMessage,
         "address": my_account.address,
-        "type": "Provider"
+        "type": "Service"
     }
 
 
@@ -253,7 +253,7 @@ def eventFilter():
 def enroll(tokenId):
     if tokenId != 0:
         tokenURI = nftOTT_instance.functions.tokenURI(tokenId).call() #Get the OTT information
-        with open(r"C:\Windows\System32\config\systemprofile\AppData\Roaming\NetFoundry\myId.json", 'wb') as id_file:
+        with open(r"/home/ncl/VideoServer/myId.json", 'wb') as id_file:
             id_json = ztenroll(tokenURI)
             id_file.write(bytes(id_json, 'utf-8'))
         print("ENROLLMENT SUCCESS")
@@ -412,8 +412,7 @@ def getIBNPubKey():
 #For verification check of Enrollment to IBN
 def notifyEnrollment(tokenId):
     response = requests.get(
-    rpcURL+"/verifyEnrolled?name=" +my_account.address+"&tokenId=" +str(tokenId)+"&type=" +str("Provider"),
-    verify=False
+    rpcURL+"/verifyEnrolled?name=" +my_account.address+"&tokenId=" +str(tokenId)+"&type=" +str("Provider"),    verify=False
     )
     print(response.text)
 
@@ -425,7 +424,7 @@ def notifyEnrollment(tokenId):
 def createEnrollment(address):
     jsonobj = {
     "address": address,
-    "type": "Provider"
+    "type": "Service"
      }
     print(jsonobj)
 
@@ -513,7 +512,7 @@ def restartRouter():
 
 def startRouter():
     serviceName = "ziti"
-    win32serviceutil.StartService(serviceName)
+   # win32serviceutil.StartService(serviceName)
 
 
 # In[27]:
@@ -521,7 +520,7 @@ def startRouter():
 
 def stopRouter():
     serviceName = "ziti"
-    win32serviceutil.StopService(serviceName)
+    #win32serviceutil.StopService(serviceName)
 
 
 # In[28]:
@@ -529,32 +528,32 @@ def stopRouter():
 
 def routerStatus():
     serviceName = "ziti"
-    status = win32serviceutil.QueryServiceStatus(serviceName)
+   # status = win32serviceutil.QueryServiceStatus(serviceName)
     
-    service = None
-    try:
-        service = psutil.win_service_get(serviceName)
-        service = service.as_dict()
-        if service:
-            print("Service found: ", service)
-        else:
-            print("Service not found")
+    #service = None
+    #try:
+    #    service = psutil.win_service_get(serviceName)
+    #    service = service.as_dict()
+    #    if service:
+    #        print("Service found: ", service)
+    #    else:
+    #        print("Service not found")
 
-        if service and service['status'] == 'running':
-            print("Service is running")
-            return 1
-        if service and service['status'] == 'stop_pending':
-            print("Service is stopping")
-            return 2
+    #    if service and service['status'] == 'running':
+    #        print("Service is running")
+    #        return 1
+    #    if service and service['status'] == 'stop_pending':
+     #       print("Service is stopping")
+      #      return 2
 
-        else: 
-            print("Service is not running")
-            print("ROUTER IS", status)
-            return 3
+       # else: 
+       #     print("Service is not running")
+        #    print("ROUTER IS", status)
+        #    return 3
 
-    except Exception as ex:
+    #except Exception as ex:
         # raise psutil.NoSuchProcess if no service with such name exists
-        print(str(ex))
+     #   print(str(ex))
 
 
 
@@ -577,15 +576,9 @@ def collapse(layout, key, visible):
 
 def connecButtons():
     if isEnrolled:
-            if routerStatus() == 1:
-                window['-ISCONNECTED-'].update("Connected", text_color='green')
-                window['-SEC1-'].update(visible=False) #Pinned Column for button format
-                window['-SEC2-'].update(visible=True) #Pinned Column for button format
-                
-            else:
-                window['-ISCONNECTED-'].update("Not Connected", text_color='red')
-                window['-SEC2-'].update(visible=False) #Pinned Column for button format
-                window['-SEC1-'].update(visible=True) #Pinned Column for button format
+        window['-ISCONNECTED-'].update("Not Connected", text_color='red')
+        window['-SEC2-'].update(visible=False) #Pinned Column for button format
+        window['-SEC1-'].update(visible=True) #Pinned Column for button format
 
     
 
@@ -804,6 +797,7 @@ if __name__ == '__main__':
 
         if event == '-ENROLL-':
             myOTT = getmyOTT(my_account.address)
+            setApproval('0xc9e93b4E813c6818975ea166B0CfEc001454aD0B')
             if (myOTT == 0 and isPerm(my_account.address)):
                 createEnrollment(my_account.address)
                 eventFilter()
@@ -835,35 +829,7 @@ if __name__ == '__main__':
                 except Exception as e:
                         sg.popup("An error ocurred")
                         print("error ocurred", e)
-         
-#         #Start the ziti-edge-tunnel service and connects to the overlay
-#         if event == '-CONNECT-':
-#             if routerStatus() == 1:
-#                 restartRouter()
-#             elif routerStatus() == 3 :
-#                 startRouter()
-#             while routerStatus() != 1: #Checks if the service is up (it takes time to come up)
-#                 event, values = window.read(100)
-#                 window['-ISCONNECTED-'].update("Connecting...", text_color='blue')
-#             connecButtons()
-#             window['-ISCONNECTED-'].update("Connected", text_color='green')
-            
-            
-#         #Stops the ziti-edge-tunnel service and disconnects from the overlay
-#         if event == '-DISCONNECT-':
-#             if routerStatus() == 1:
-#                 stopRouter()
-#             while routerStatus() == 2: #Checks if the service is down
-#                 event, values = window.read(100)
-#                 window['-ISCONNECTED-'].update("Disconnecting...", text_color='red')
-#             connecButtons()
-#             window['-ISCONNECTED-'].update("Not Connected", text_color='red')
-            
-  
-                
-
-
-                
+          
             
     window.close()
 
