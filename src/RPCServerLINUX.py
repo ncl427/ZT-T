@@ -52,10 +52,10 @@ chainId = 2022
 ###
 
 unlockEmail = ""
-abiFolder = os.path.join(ROOT_DIR, 'ABI')
-keyFolder = os.path.join(ROOT_DIR, 'Keys')
-srcFolder = os.path.join(ROOT_DIR, 'src')
-##idFolder =  os.path.join(ROOT_DIR, 'identity') ##Could be used later for API authentication
+abiFolder = os.path.join(ROOT_DIR_LINUX, 'ABI')
+keyFolder = os.path.join(ROOT_DIR_LINUX, 'Keys')
+srcFolder = os.path.join(ROOT_DIR_LINUX, 'src')
+##idFolder =  os.path.join(ROOT_DIR_LINUX, 'identity') ##Could be used later for API authentication
 
 pwo = PasswordGenerator()
 #print(os.chdir('ABI'))
