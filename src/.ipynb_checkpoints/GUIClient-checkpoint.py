@@ -82,7 +82,7 @@ with open(abiFolder+"/"+"accountRules.json") as file:
 ##os.environ["ZITI_IDENTITIES"] = idFolder+"/"+"myId.json"
 os.environ["ZITI_IDENTITIES"] = ""
 
-rpcURL = "http://localhost:105/"
+rpcURL = "http://172.18.102.81:3003/"
 
 
 from openziti import enroll as ztenroll ##Environment variable is acting weird.
@@ -175,7 +175,7 @@ def createIdentity(secretMessage):
     jsonobj = {
         "signature": signedMessage,
         "address": my_account.address,
-        "type": "Provider"
+        "type": "User"
     }
 
 
@@ -346,6 +346,7 @@ def signMessage(message, privKey):
     
     #signed_message = w3.eth.sign(privKey,text=message)
     print(cmd.format(message,privKey))
+    print(str(output))
     substring = re.search(pattern, str(output)).group(1)
     print(substring)
     return substring
@@ -412,7 +413,7 @@ def getIBNPubKey():
 #For verification check of Enrollment to IBN
 def notifyEnrollment(tokenId):
     response = requests.get(
-    rpcURL+"/verifyEnrolled?name=" +my_account.address+"&tokenId=" +str(tokenId),
+    rpcURL+"/verifyEnrolled?name=" +my_account.address+"&tokenId=" +str(tokenId)+"&type=" +str("Client"),
     verify=False
     )
     print(response.text)
@@ -425,7 +426,7 @@ def notifyEnrollment(tokenId):
 def createEnrollment(address):
     jsonobj = {
     "address": address,
-    "type": "Provider"
+    "type": "User"
      }
     print(jsonobj)
 

@@ -1,60 +1,6 @@
 [
 	{
 		"inputs": [],
-		"name": "__abdicate",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "uint256",
-				"name": "repoId",
-				"type": "uint256"
-			}
-		],
-		"name": "cancel",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "string",
-				"name": "empName",
-				"type": "string"
-			},
-			{
-				"internalType": "string",
-				"name": "email",
-				"type": "string"
-			},
-			{
-				"internalType": "uint256",
-				"name": "employeId",
-				"type": "uint256"
-			},
-			{
-				"internalType": "string",
-				"name": "description",
-				"type": "string"
-			}
-		],
-		"name": "create",
-		"outputs": [
-			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
-			}
-		],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [],
 		"stateMutability": "nonpayable",
 		"type": "constructor"
 	},
@@ -109,19 +55,8 @@
 		"type": "event"
 	},
 	{
-		"inputs": [
-			{
-				"internalType": "uint256",
-				"name": "repoId",
-				"type": "uint256"
-			},
-			{
-				"internalType": "address",
-				"name": "theAddress",
-				"type": "address"
-			}
-		],
-		"name": "updateAddress",
+		"inputs": [],
+		"name": "__abdicate",
 		"outputs": [],
 		"stateMutability": "nonpayable",
 		"type": "function"
@@ -129,17 +64,12 @@
 	{
 		"inputs": [
 			{
-				"internalType": "uint256",
-				"name": "repoId",
-				"type": "uint256"
-			},
-			{
-				"internalType": "string",
-				"name": "psswd",
-				"type": "string"
+				"internalType": "address",
+				"name": "newGuard",
+				"type": "address"
 			}
 		],
-		"name": "updatePass",
+		"name": "_changeGuardian",
 		"outputs": [],
 		"stateMutability": "nonpayable",
 		"type": "function"
@@ -166,166 +96,64 @@
 	{
 		"inputs": [
 			{
+				"internalType": "uint256",
+				"name": "repoId",
+				"type": "uint256"
+			}
+		],
+		"name": "cancel",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
 				"internalType": "string",
-				"name": "_email",
+				"name": "empName",
+				"type": "string"
+			},
+			{
+				"internalType": "string",
+				"name": "email",
+				"type": "string"
+			},
+			{
+				"internalType": "uint256",
+				"name": "employeId",
+				"type": "uint256"
+			},
+			{
+				"internalType": "string",
+				"name": "description",
 				"type": "string"
 			}
 		],
-		"name": "getEmployeeByEmail",
+		"name": "create",
 		"outputs": [
 			{
-				"components": [
-					{
-						"internalType": "uint256",
-						"name": "id",
-						"type": "uint256"
-					},
-					{
-						"internalType": "string",
-						"name": "uniquePass",
-						"type": "string"
-					},
-					{
-						"internalType": "address",
-						"name": "verAddress",
-						"type": "address"
-					},
-					{
-						"internalType": "string",
-						"name": "empName",
-						"type": "string"
-					},
-					{
-						"internalType": "string",
-						"name": "email",
-						"type": "string"
-					},
-					{
-						"internalType": "uint256",
-						"name": "employeId",
-						"type": "uint256"
-					},
-					{
-						"internalType": "bool",
-						"name": "canceled",
-						"type": "bool"
-					}
-				],
-				"internalType": "struct emailRepo.Repo",
+				"internalType": "uint256",
 				"name": "",
-				"type": "tuple"
+				"type": "uint256"
 			}
 		],
-		"stateMutability": "view",
+		"stateMutability": "nonpayable",
 		"type": "function"
 	},
 	{
 		"inputs": [
 			{
-				"internalType": "uint256",
-				"name": "_empId",
-				"type": "uint256"
+				"internalType": "address",
+				"name": "theAddress",
+				"type": "address"
 			}
 		],
-		"name": "getEmployeeByEmployeeId",
+		"name": "getPubKeyByAddress",
 		"outputs": [
 			{
-				"components": [
-					{
-						"internalType": "uint256",
-						"name": "id",
-						"type": "uint256"
-					},
-					{
-						"internalType": "string",
-						"name": "uniquePass",
-						"type": "string"
-					},
-					{
-						"internalType": "address",
-						"name": "verAddress",
-						"type": "address"
-					},
-					{
-						"internalType": "string",
-						"name": "empName",
-						"type": "string"
-					},
-					{
-						"internalType": "string",
-						"name": "email",
-						"type": "string"
-					},
-					{
-						"internalType": "uint256",
-						"name": "employeId",
-						"type": "uint256"
-					},
-					{
-						"internalType": "bool",
-						"name": "canceled",
-						"type": "bool"
-					}
-				],
-				"internalType": "struct emailRepo.Repo",
+				"internalType": "string",
 				"name": "",
-				"type": "tuple"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "uint256",
-				"name": "_id",
-				"type": "uint256"
-			}
-		],
-		"name": "getEmployeeInfo",
-		"outputs": [
-			{
-				"components": [
-					{
-						"internalType": "uint256",
-						"name": "id",
-						"type": "uint256"
-					},
-					{
-						"internalType": "string",
-						"name": "uniquePass",
-						"type": "string"
-					},
-					{
-						"internalType": "address",
-						"name": "verAddress",
-						"type": "address"
-					},
-					{
-						"internalType": "string",
-						"name": "empName",
-						"type": "string"
-					},
-					{
-						"internalType": "string",
-						"name": "email",
-						"type": "string"
-					},
-					{
-						"internalType": "uint256",
-						"name": "employeId",
-						"type": "uint256"
-					},
-					{
-						"internalType": "bool",
-						"name": "canceled",
-						"type": "bool"
-					}
-				],
-				"internalType": "struct emailRepo.Repo",
-				"name": "",
-				"type": "tuple"
+				"type": "string"
 			}
 		],
 		"stateMutability": "view",
@@ -406,6 +234,60 @@
 			}
 		],
 		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "repoId",
+				"type": "uint256"
+			},
+			{
+				"internalType": "address",
+				"name": "theAddress",
+				"type": "address"
+			}
+		],
+		"name": "updateAddress",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "repoId",
+				"type": "uint256"
+			},
+			{
+				"internalType": "string",
+				"name": "psswd",
+				"type": "string"
+			}
+		],
+		"name": "updatePass",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "repoId",
+				"type": "uint256"
+			},
+			{
+				"internalType": "string",
+				"name": "pubKey",
+				"type": "string"
+			}
+		],
+		"name": "updatePubKey",
+		"outputs": [],
+		"stateMutability": "nonpayable",
 		"type": "function"
 	},
 	{

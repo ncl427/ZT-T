@@ -27,6 +27,7 @@ from eth_account.messages import encode_defunct
 from config.definitions import ROOT_DIR
 from threading import Thread
 
+from dotenv import load_dotenv
 from os import getenv
 
 import json
@@ -46,10 +47,13 @@ import psutil
 ### FOR OUR BESU CHAIN ####
 ##Uncomment if neeeded###
 
-nftOTT = "0xAf47c9D246fEF48C6AAc885353A86Cf06B8Ec4E5" #Address of the NFT contract
-permissionedAddress = "0xc6AE6461B8b3c2C98e10E21fA8aD0ea15aF6F582"
+nftOTT = os.getenv('OTTADDRESS') #Address of the NFT contract
+permissionedAddress = os.getenv('IDENTITYCONTRACT')
 
-web3Prov = "http://172.18.102.169:9545"
+web3Prov = os.getenv('WEB3PROVIDER')
+rpcURL = os.getenv('IBNBACKEND')
+
+ibnAddress = os.getenv('IBNADDRESS')
 
 ### FOR MY LOCAL TEST ###
 ### Uncomment if needed###
@@ -80,9 +84,9 @@ with open(abiFolder+"/"+"accountRules.json") as file:
     abi = json.load(file)
     
 ##os.environ["ZITI_IDENTITIES"] = idFolder+"/"+"myId.json"
-os.environ["ZITI_IDENTITIES"] = ""
+#os.environ["ZITI_IDENTITIES"] = ""
 
-rpcURL = "http://172.18.102.81:3003/"
+
 
 
 from openziti import enroll as ztenroll ##Environment variable is acting weird.
@@ -252,7 +256,7 @@ def eventFilter():
 
 def enroll(tokenId):
     if tokenId != 0:
-        tokenURI = nftOTT_instance.functions.tokenURI(tokenId).call() #Get the OTT information
+        tokenURI = decryptOTT(tokenId) #Get the OTT information
         with open(r"/home/ncl/VideoServer/myId.json", 'wb') as id_file:
             id_json = ztenroll(tokenURI)
             id_file.write(bytes(id_json, 'utf-8'))
@@ -265,7 +269,7 @@ def enroll(tokenId):
 
 
 def getmyOTT(address):
-    myTokens = nftOTT_instance.functions.getOwnedNfts(address).call({'from': "0xc9e93b4E813c6818975ea166B0CfEc001454aD0B"}) #Get the owned NFTs from an account
+    myTokens = nftOTT_instance.functions.getOwnedNfts(address).call({'from': ibnAddress}) #Get the owned NFTs from an account
     if len(myTokens) == 0:
         return 0
     else:
@@ -286,7 +290,7 @@ def decodeOTT(tokenId):
     if myOTT == 0:
         return 0
     else:
-        tokenURI = nftOTT_instance.functions.tokenURI(myOTT).call() #Get the OTT information
+        tokenURI = decryptOTT(myOTT) #Get the OTT information
         decodedOTT = jwt.decode(tokenURI, options={"verify_signature": False})   #We need to cecrypt first
         print(decodedOTT)
         return decodedOTT["exp"]
@@ -294,6 +298,10 @@ def decodeOTT(tokenId):
 
 # In[14]:
 
+def decryptOTT(tokenId):
+    encryptedtokenURI = nftOTT_instance.functions.tokenURI(tokenId).call() #Get the OTT information
+    tokenURI = decryptMessage(encryptedtokenURI, my_account.privateKey)
+    return tokenURI
 
 def isPerm(address):
     result = contract_instance.functions.accountPermitted(address).call() #Get the status of the account
@@ -422,9 +430,12 @@ def notifyEnrollment(tokenId):
 
 #For creating identity and enrollment in Ziti when address was permissioned by Admin
 def createEnrollment(address):
+    signedMessage = signMessage(my_account.address, my_account.privateKey) #Sign message to not expose the public address and to ensure proper identity
+
     jsonobj = {
     "address": address,
-    "type": "Service"
+    "type": "Service",
+     "signature": signedMessage
      }
     print(jsonobj)
 
@@ -797,7 +808,7 @@ if __name__ == '__main__':
 
         if event == '-ENROLL-':
             myOTT = getmyOTT(my_account.address)
-            setApproval('0xc9e93b4E813c6818975ea166B0CfEc001454aD0B')
+            setApproval(ibnAddress)
             if (myOTT == 0 and isPerm(my_account.address)):
                 createEnrollment(my_account.address)
                 eventFilter()

@@ -17,7 +17,8 @@ from config.definitions import ROOT_DIR_LINUX
 from email.message import EmailMessage
 from password_generator import PasswordGenerator
 
-
+from dotenv import load_dotenv
+from os import getenv
 
 import os
 import json
@@ -30,14 +31,18 @@ import re
 ### FOR OUR BESU CHAIN ####
 ##Uncomment if neeeded###
 
-permissionedAddress = "0xc6AE6461B8b3c2C98e10E21fA8aD0ea15aF6F582"
-nftOTT = "0xAf47c9D246fEF48C6AAc885353A86Cf06B8Ec4E5"
-employeeRepo= "0x862052D18e7B8f5261E2601b94bE2197f58A86Ae"
+permissionedAddress = os.getenv('IDENTITYCONTRACT')
+nftOTT = os.getenv('OTTADDRESS') #Address of the NFT contract
+employeeRepo= os.getenv('MFAREPO')
 ###
-web3Prov = "http://172.18.102.169:9545"
-authURL = "https://orchestrator.ncl.lab:1280/edge/management/v1/authenticate?method=password"
-apiURL = "https://orchestrator.ncl.lab:1280/edge/management/v1/"
-chainId = 2022
+web3Prov = os.getenv('WEB3PROVIDER')
+#authURL = "https://orchestrator.ncl.lab:1280/edge/management/v1/authenticate?method=password"
+apiURL = os.getenv('ZITIRPC')
+chainId = os.getenv('CHAINID')
+
+ibnAddress = os.getenv('IBNADDRESS')
+emailUser = os.getenv('EMAILUSER')
+emailPwd = os.getenv('EMAILPWD')
 
 ### FOR MY LOCAL TEST ###
 ### Uncomment if needed###
@@ -69,11 +74,9 @@ with open(abiFolder+"/"+"ottNFT.json") as file:
 with open(abiFolder+"/"+"repoList.json") as file:
     abiEmpRep = json.load(file)
             
-#abi = json.loads('[ { "inputs": [ { "internalType": "contract AccountIngress", "name": "_ingressContract", "type": "address" }, { "internalType": "contract AccountStorage", "name": "_storage", "type": "address" } ], "stateMutability": "nonpayable", "type": "constructor" }, { "anonymous": false, "inputs": [ { "indexed": false, "internalType": "bool", "name": "accountAdded", "type": "bool" }, { "indexed": false, "internalType": "address", "name": "accountAddress", "type": "address" } ], "name": "AccountAdded", "type": "event" }, { "anonymous": false, "inputs": [ { "indexed": false, "internalType": "bool", "name": "accountRemoved", "type": "bool" }, { "indexed": false, "internalType": "address", "name": "accountAddress", "type": "address" } ], "name": "AccountRemoved", "type": "event" }, { "inputs": [ { "internalType": "address", "name": "account", "type": "address" } ], "name": "addAccount", "outputs": [ { "internalType": "bool", "name": "", "type": "bool" } ], "stateMutability": "nonpayable", "type": "function" }, { "inputs": [ { "internalType": "address[]", "name": "accounts", "type": "address[]" } ], "name": "addAccounts", "outputs": [ { "internalType": "bool", "name": "", "type": "bool" } ], "stateMutability": "nonpayable", "type": "function" }, { "inputs": [], "name": "enterReadOnly", "outputs": [ { "internalType": "bool", "name": "", "type": "bool" } ], "stateMutability": "nonpayable", "type": "function" }, { "inputs": [], "name": "exitReadOnly", "outputs": [ { "internalType": "bool", "name": "", "type": "bool" } ], "stateMutability": "nonpayable", "type": "function" }, { "inputs": [ { "internalType": "address", "name": "account", "type": "address" } ], "name": "removeAccount", "outputs": [ { "internalType": "bool", "name": "", "type": "bool" } ], "stateMutability": "nonpayable", "type": "function" }, { "inputs": [ { "internalType": "address", "name": "_account", "type": "address" } ], "name": "accountPermitted", "outputs": [ { "internalType": "bool", "name": "", "type": "bool" } ], "stateMutability": "view", "type": "function" }, { "inputs": [], "name": "getAccounts", "outputs": [ { "internalType": "address[]", "name": "", "type": "address[]" } ], "stateMutability": "view", "type": "function" }, { "inputs": [ { "internalType": "uint256", "name": "index", "type": "uint256" } ], "name": "getByIndex", "outputs": [ { "internalType": "address", "name": "account", "type": "address" } ], "stateMutability": "view", "type": "function" }, { "inputs": [], "name": "getContractVersion", "outputs": [ { "internalType": "uint256", "name": "", "type": "uint256" } ], "stateMutability": "view", "type": "function" }, { "inputs": [], "name": "getSize", "outputs": [ { "internalType": "uint256", "name": "", "type": "uint256" } ], "stateMutability": "view", "type": "function" }, { "inputs": [], "name": "isReadOnly", "outputs": [ { "internalType": "bool", "name": "", "type": "bool" } ], "stateMutability": "view", "type": "function" }, { "inputs": [ { "internalType": "address", "name": "sender", "type": "address" }, { "internalType": "address", "name": "", "type": "address" }, { "internalType": "uint256", "name": "", "type": "uint256" }, { "internalType": "uint256", "name": "", "type": "uint256" }, { "internalType": "uint256", "name": "", "type": "uint256" }, { "internalType": "bytes", "name": "", "type": "bytes" } ], "name": "transactionAllowed", "outputs": [ { "internalType": "bool", "name": "", "type": "bool" } ], "stateMutability": "view", "type": "function" }]')
-#abiNFT= json.loads('[ { "inputs": [], "stateMutability": "nonpayable", "type": "constructor" }, { "anonymous": false, "inputs": [ { "indexed": true, "internalType": "address", "name": "owner", "type": "address" }, { "indexed": true, "internalType": "address", "name": "approved", "type": "address" }, { "indexed": true, "internalType": "uint256", "name": "tokenId", "type": "uint256" } ], "name": "Approval", "type": "event" }, { "anonymous": false, "inputs": [ { "indexed": true, "internalType": "address", "name": "owner", "type": "address" }, { "indexed": true, "internalType": "address", "name": "operator", "type": "address" }, { "indexed": false, "internalType": "bool", "name": "approved", "type": "bool" } ], "name": "ApprovalForAll", "type": "event" }, { "inputs": [ { "internalType": "address", "name": "to", "type": "address" }, { "internalType": "uint256", "name": "tokenId", "type": "uint256" } ], "name": "approve", "outputs": [], "stateMutability": "nonpayable", "type": "function" }, { "inputs": [ { "internalType": "uint256", "name": "tokenId", "type": "uint256" } ], "name": "burn", "outputs": [], "stateMutability": "nonpayable", "type": "function" }, { "inputs": [ { "internalType": "address", "name": "_to", "type": "address" }, { "internalType": "uint256", "name": "_tokenId", "type": "uint256" }, { "internalType": "string", "name": "tokenURI_", "type": "string" } ], "name": "mint", "outputs": [], "stateMutability": "nonpayable", "type": "function" }, { "anonymous": false, "inputs": [ { "indexed": true, "internalType": "address", "name": "previousOwner", "type": "address" }, { "indexed": true, "internalType": "address", "name": "newOwner", "type": "address" } ], "name": "OwnershipTransferred", "type": "event" }, { "inputs": [], "name": "renounceOwnership", "outputs": [], "stateMutability": "nonpayable", "type": "function" }, { "inputs": [ { "internalType": "address", "name": "from", "type": "address" }, { "internalType": "address", "name": "to", "type": "address" }, { "internalType": "uint256", "name": "tokenId", "type": "uint256" } ], "name": "safeTransferFrom", "outputs": [], "stateMutability": "nonpayable", "type": "function" }, { "inputs": [ { "internalType": "address", "name": "from", "type": "address" }, { "internalType": "address", "name": "to", "type": "address" }, { "internalType": "uint256", "name": "tokenId", "type": "uint256" }, { "internalType": "bytes", "name": "_data", "type": "bytes" } ], "name": "safeTransferFrom", "outputs": [], "stateMutability": "nonpayable", "type": "function" }, { "inputs": [ { "internalType": "address", "name": "operator", "type": "address" }, { "internalType": "bool", "name": "approved", "type": "bool" } ], "name": "setApprovalForAll", "outputs": [], "stateMutability": "nonpayable", "type": "function" }, { "inputs": [ { "internalType": "string", "name": "baseURI_", "type": "string" } ], "name": "setBaseURI", "outputs": [], "stateMutability": "nonpayable", "type": "function" }, { "anonymous": false, "inputs": [ { "indexed": true, "internalType": "address", "name": "from", "type": "address" }, { "indexed": true, "internalType": "address", "name": "to", "type": "address" }, { "indexed": true, "internalType": "uint256", "name": "tokenId", "type": "uint256" } ], "name": "Transfer", "type": "event" }, { "inputs": [ { "internalType": "address", "name": "from", "type": "address" }, { "internalType": "address", "name": "to", "type": "address" }, { "internalType": "uint256", "name": "tokenId", "type": "uint256" } ], "name": "transferFrom", "outputs": [], "stateMutability": "nonpayable", "type": "function" }, { "inputs": [ { "internalType": "address", "name": "newOwner", "type": "address" } ], "name": "transferOwnership", "outputs": [], "stateMutability": "nonpayable", "type": "function" }, { "inputs": [ { "internalType": "address", "name": "owner", "type": "address" } ], "name": "balanceOf", "outputs": [ { "internalType": "uint256", "name": "", "type": "uint256" } ], "stateMutability": "view", "type": "function" }, { "inputs": [ { "internalType": "uint256", "name": "tokenId", "type": "uint256" } ], "name": "getApproved", "outputs": [ { "internalType": "address", "name": "", "type": "address" } ], "stateMutability": "view", "type": "function" }, { "inputs": [ { "internalType": "address", "name": "owner", "type": "address" }, { "internalType": "address", "name": "operator", "type": "address" } ], "name": "isApprovedForAll", "outputs": [ { "internalType": "bool", "name": "", "type": "bool" } ], "stateMutability": "view", "type": "function" }, { "inputs": [], "name": "name", "outputs": [ { "internalType": "string", "name": "", "type": "string" } ], "stateMutability": "view", "type": "function" }, { "inputs": [], "name": "owner", "outputs": [ { "internalType": "address", "name": "", "type": "address" } ], "stateMutability": "view", "type": "function" }, { "inputs": [ { "internalType": "uint256", "name": "tokenId", "type": "uint256" } ], "name": "ownerOf", "outputs": [ { "internalType": "address", "name": "", "type": "address" } ], "stateMutability": "view", "type": "function" }, { "inputs": [ { "internalType": "bytes4", "name": "interfaceId", "type": "bytes4" } ], "name": "supportsInterface", "outputs": [ { "internalType": "bool", "name": "", "type": "bool" } ], "stateMutability": "view", "type": "function" }, { "inputs": [], "name": "symbol", "outputs": [ { "internalType": "string", "name": "", "type": "string" } ], "stateMutability": "view", "type": "function" }, { "inputs": [ { "internalType": "uint256", "name": "index", "type": "uint256" } ], "name": "tokenByIndex", "outputs": [ { "internalType": "uint256", "name": "", "type": "uint256" } ], "stateMutability": "view", "type": "function" }, { "inputs": [ { "internalType": "address", "name": "owner", "type": "address" }, { "internalType": "uint256", "name": "index", "type": "uint256" } ], "name": "tokenOfOwnerByIndex", "outputs": [ { "internalType": "uint256", "name": "", "type": "uint256" } ], "stateMutability": "view", "type": "function" }, { "inputs": [ { "internalType": "uint256", "name": "tokenId", "type": "uint256" } ], "name": "tokenURI", "outputs": [ { "internalType": "string", "name": "", "type": "string" } ], "stateMutability": "view", "type": "function" }, { "inputs": [], "name": "totalSupply", "outputs": [ { "internalType": "uint256", "name": "", "type": "uint256" } ], "stateMutability": "view", "type": "function" } ]')
 obj = {
-    "username": "admin",
-    "password": "admin"
+    "username": os.getenv('ZITIUSERNAME'),
+    "password": os.getenv('ZITIPWD')
 }
 
 
@@ -193,7 +196,7 @@ def signsendTransaction(trx, my_account):
 
 # %%
 def getOTT(address, endpointType):
-    authResponse = requests.post(authURL, json=obj, verify=False,)
+    authResponse = requests.post(f"{apiURL}authenticate?method=password", json=obj, verify=False,)
     #print(authResponse.text)
     identobj =createIdentityObj(address, endpointType)
     ott = createOTT(identobj, authResponse)
@@ -208,8 +211,8 @@ def emailMFA(email, secret):
 
     # mypass =  w3.eth.account.decrypt(myencPass, passw) #Decrypts the email password, to not reveal it.
     msg = EmailMessage() 
-    sender = "nclztibn@gmail.com"
-    passWd = "cytbdpweoplpsogk" #not secure, change later
+    sender = emailUser
+    passWd = emailPwd 
     msg['From'] = sender    # Your e-mail address
     msg['To'] = email
     msg['Subject'] = "MFA from ZT&T"
@@ -330,6 +333,16 @@ def recordAddress(empId, address):
     #tx_receipt = w3.eth.wait_for_transaction_receipt(txn_hash.hex())  #Gets a receipt from the Blockchain
     #return tx_receipt
 
+# %%
+def recordPubKey(empId, pubKey):
+    check_sum = w3.toChecksumAddress(my_account._address)
+    trans = verify_instance.functions.updatePubKey(empId, pubKey).buildTransaction({"from": check_sum,"gasPrice": w3.eth.gas_price,"nonce": nonce,"chainId": chainId}) #build RAW transaction supported by BESU
+    updateNonce()
+    signed_txn = w3.eth.account.sign_transaction(trans, my_account.privateKey) #Sign transaction using our own private key
+    txn_hash = w3.eth.send_raw_transaction(signed_txn.rawTransaction) #Send transaction to BESU
+    #tx_receipt = w3.eth.wait_for_transaction_receipt(txn_hash.hex())  #Gets a receipt from the Blockchain
+    #return tx_receipt
+
 
 # %%
 def addPermission(address):
@@ -350,16 +363,21 @@ def addPermission(address):
 
 
 # %%
-def mintOTTNFT(address, endpointType):
+def mintOTTNFT(address, endpointType, signature):
     check_sum = w3.toChecksumAddress(my_account._address)
     ott = str(getOTT(address, endpointType))  
-    #mintOTTNFT(ott, address)
+    if signature == '':
+        pubKeyAddress = getPubKeyByAddress(address)
+    else:
+        pubKeyAddress = getPubKeyfromSig(signature, address)
+    encryptedOTT = encryptMessage(ott, pubKeyAddress)  # We encrypt the ott using the requested address pubKey
+       #mintOTTNFT(ott, address)
     totalSupply = nftOTT_instance.functions.totalSupply().call() #Get the total amount of tokens created
     check_sum = w3.toChecksumAddress(my_account._address)
     print("Totalsupply", totalSupply, address, ott)
     tokenId = totalSupply+1
     print(tokenId)
-    trans = nftOTT_instance.functions.mint(address,tokenId,ott).buildTransaction({"from": check_sum,"gasPrice": w3.eth.gas_price,"nonce": nonce,"chainId": chainId}) #build RAW transaction supported by BESU
+    trans = nftOTT_instance.functions.mint(address,tokenId,encryptedOTT).buildTransaction({"from": check_sum,"gasPrice": w3.eth.gas_price,"nonce": nonce,"chainId": chainId}) #build RAW transaction supported by BESU
     updateNonce()
     signed_txn = w3.eth.account.sign_transaction(trans, my_account.privateKey) #Sign transaction using our own private key
     print(signed_txn.rawTransaction)
@@ -395,9 +413,14 @@ def updateNonce():
 
 # %%
 def verifyMFA(signedMessage, address):
-    resultMFA = verify_instance.functions.verifyMFA(signedMessage, address).call({'from': "0xc9e93b4E813c6818975ea166B0CfEc001454aD0B"}) #Get the status of the account
+    resultMFA = verify_instance.functions.verifyMFA(signedMessage, address).call({'from': ibnAddress}) #Get the status of the account
     print(resultMFA)
     return resultMFA
+
+def getPubKeyByAddress(address):
+    resulPubKey = verify_instance.functions.getPubKeyByAddress(address).call({'from': ibnAddress}) #Get the pubKey of the account
+    #print(resultMFA)
+    return resulPubKey
 
     
     
@@ -406,7 +429,7 @@ def verifyMFA(signedMessage, address):
 # %%
 ### NEED TO change to a better version.... Save the ID somewhere (Get it from the createOTT part)###
 def getIdentityInfoN(identity):
-    authResponse = requests.post(authURL, json=obj, verify=False,)
+    authResponse = requests.post(f"{apiURL}authenticate?method=password", json=obj, verify=False,)
     jsonResponse = json.loads(authResponse.text)
     #print(authResponse.text)
 
@@ -513,6 +536,7 @@ def verify():
         encryptedMessage =  encryptMessage(str(uniquePassw), pubKey)  # We encrypt the message with a random password
         recordPassword(empResult, str(uniquePassw)) #Records address and password information in the verification repo for MFA
         recordAddress(empResult, message) #Records address and password information in the verification repo for MFA
+        recordPubKey(empResult, pubKey) #Records address and pubKey information in the verification repo for encryption
         emailMFA(email, encryptedMessage)
         return "201"
     return result
@@ -539,7 +563,7 @@ def createIdentity():
                     perm = True
             if perm:
                     print("TEEEEEEEEEEEEEEEEEEEEEST")
-                    mintOTTNFT(address, endpointType)
+                    mintOTTNFT(address, endpointType, '')
                     return "The account " + address + "has created a valid ID is , here is your OTT: "
          
     except Exception as e:
@@ -556,6 +580,7 @@ def createEnrollment():
         #requestJSON = json.loads(requestJSON)
         address = requestJSON["address"]
         endpointType = requestJSON["type"]
+        signature = requestJSON["signature"]
         print(address)
         perm = isPerm(address) #Get the status of the account
         if not perm:
@@ -563,7 +588,7 @@ def createEnrollment():
             return str(e)
         if perm:
             print("TEEEEEEEEEEEEEEEEEEEEEST")
-            mintOTTNFT(address, endpointType)
+            mintOTTNFT(address, endpointType, signature)
             return "The account " + address + "has created a valid ID is , here is your OTT: "
          
     except Exception as e:

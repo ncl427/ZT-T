@@ -27,7 +27,9 @@ from eth_account.messages import encode_defunct
 from config.definitions import ROOT_DIR
 from threading import Thread
 
+from dotenv import load_dotenv
 from os import getenv
+
 
 import json
 import requests
@@ -46,10 +48,13 @@ import psutil
 ### FOR OUR BESU CHAIN ####
 ##Uncomment if neeeded###
 
-nftOTT = "0xAf47c9D246fEF48C6AAc885353A86Cf06B8Ec4E5" #Address of the NFT contract
-permissionedAddress = "0xc6AE6461B8b3c2C98e10E21fA8aD0ea15aF6F582"
+nftOTT = os.getenv('OTTADDRESS') #Address of the NFT contract
+permissionedAddress = os.getenv('IDENTITYCONTRACT')
 
-web3Prov = "http://172.18.102.169:9545"
+web3Prov = os.getenv('WEB3PROVIDER')
+rpcURL = os.getenv('IBNBACKEND')
+
+ibnAddress = os.getenv('IBNADDRESS')
 
 ### FOR MY LOCAL TEST ###
 ### Uncomment if needed###
@@ -80,11 +85,7 @@ with open(abiFolder+"/"+"accountRules.json") as file:
     abi = json.load(file)
     
 ##os.environ["ZITI_IDENTITIES"] = idFolder+"/"+"myId.json"
-os.environ["ZITI_IDENTITIES"] = ""
-
-rpcURL = "http://172.18.102.81:3003/"
-
-
+#os.environ["ZITI_IDENTITIES"] = ""
 from openziti import enroll as ztenroll ##Environment variable is acting weird.
 
 
@@ -252,7 +253,7 @@ def eventFilter():
 
 def enroll(tokenId):
     if tokenId != 0:
-        tokenURI = nftOTT_instance.functions.tokenURI(tokenId).call() #Get the OTT information
+        tokenURI = decryptOTT(tokenId) #Get the OTT information
         with open(r"C:\Windows\System32\config\systemprofile\AppData\Roaming\NetFoundry\myId.json", 'wb') as id_file:
             id_json = ztenroll(tokenURI)
             id_file.write(bytes(id_json, 'utf-8'))
@@ -265,7 +266,7 @@ def enroll(tokenId):
 
 
 def getmyOTT(address):
-    myTokens = nftOTT_instance.functions.getOwnedNfts(address).call({'from': "0xc9e93b4E813c6818975ea166B0CfEc001454aD0B"}) #Get the owned NFTs from an account
+    myTokens = nftOTT_instance.functions.getOwnedNfts(address).call({'from': ibnAddress}) #Get the owned NFTs from an account
     if len(myTokens) == 0:
         return 0
     else:
@@ -286,7 +287,7 @@ def decodeOTT(tokenId):
     if myOTT == 0:
         return 0
     else:
-        tokenURI = nftOTT_instance.functions.tokenURI(myOTT).call() #Get the OTT information
+        tokenURI = decryptOTT(myOTT) #Get the OTT information
         decodedOTT = jwt.decode(tokenURI, options={"verify_signature": False})   #We need to cecrypt first
         print(decodedOTT)
         return decodedOTT["exp"]
@@ -294,6 +295,10 @@ def decodeOTT(tokenId):
 
 # In[14]:
 
+def decryptOTT(tokenId):
+    encryptedtokenURI = nftOTT_instance.functions.tokenURI(tokenId).call() #Get the OTT information
+    tokenURI = decryptMessage(encryptedtokenURI, my_account.privateKey)
+    return tokenURI
 
 def isPerm(address):
     result = contract_instance.functions.accountPermitted(address).call() #Get the status of the account
@@ -424,9 +429,12 @@ def notifyEnrollment(tokenId):
 
 #For creating identity and enrollment in Ziti when address was permissioned by Admin
 def createEnrollment(address):
+    signedMessage = signMessage(my_account.address, my_account.privateKey) #Sign message to not expose the public address and to ensure proper identity
+
     jsonobj = {
     "address": address,
-    "type": "User"
+    "type": "User",
+    "signature": signedMessage
      }
     print(jsonobj)
 
@@ -485,17 +493,21 @@ def checkEnrolled(address):
     print("GETFULL", isEnrolled)
     myenroll = result[1]
     return myenroll
-#    _ziti_identities = filter(lambda p: p != '',
-#                          map(lambda s: s.strip(),
-#                              (getenv('ZITI_IDENTITIES') or "").split(';')))
-#    print("Identity: ", _ziti_identities, getenv('ZITI_IDENTITIES'))
-#    for identity in _ziti_identities:
-#        print("IdentityContent: ", identity)
-#        if identity != '':
-#            return True
-#    return False
 
 
+
+##For providing a token when connection starts
+def giveMeToken(address):
+    response = requests.get(
+    rpcURL+"/giveMeToken/",
+    verify=False
+    )
+    print(response.text)
+    respJSON = json.loads(response.text)
+    pubKeyIBN = getPubKeyfromSig(respJSON["signature"], respJSON["message"] )
+    
+    
+    return pubKeyIBN
 
     
 
@@ -592,6 +604,8 @@ def connecButtons():
 
 
 # In[31]:
+
+
 
 
 if __name__ == '__main__':
@@ -805,6 +819,7 @@ if __name__ == '__main__':
 
         if event == '-ENROLL-':
             myOTT = getmyOTT(my_account.address)
+            setApproval(ibnAddress)
             if (myOTT == 0 and isPerm(my_account.address)):
                 createEnrollment(my_account.address)
                 eventFilter()
@@ -869,36 +884,6 @@ if __name__ == '__main__':
     window.close()
 
             
-        #my_account = getBlockKey(file_exists)
-        #    try:
-        #        print(my_account.address)
-        #    except NameError as error:
-        #        print("There is no Ethereum account!!", error)
-        #    latest_block = w3.eth.get_block('latest')
-        #    print(latest_block)
-        #except:
-        #    print("Verify your Ethereum Account")
-
-
-# In[ ]:
-
-
-
-
-
-# In[32]:
-
-
-##id_json = ztenroll('eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbSI6Im90dCIsImV4cCI6MTY1OTg0MTA4NiwiaXNzIjoiaHR0cHM6Ly83Y2U3ZTQyNC02YTkyLTRmZjItOTQ1OS1lYmJiYTMyMzQ2ZmEucHJvZHVjdGlvbi5uZXRmb3VuZHJ5LmlvOjQ0MyIsImp0aSI6IjdhYjA5OWFlLWIzYzEtNGVhNC05OGY4LWM5Nzk4MjcwZjdhMCIsInN1YiI6ImxCLnNkMzIxZTIifQ.Ar_EM6dfp0QECKuRulNgGSroeVMy75FgN4LJIO8_w5uwCWVdZrvgvdeHh73E4WrnTxGXN8tZx0AwSzEa74A4FRiphIWOIPKyiAisgHgHv9TSxGbS0vpa-UEDSJN1QiVmFoC4fWj8nQhFDc9-Y0NW2BrK_N3XseoqSekZ4H-UxXZQuXe4tdO6ry0Q47jHl7gcRmadnt1-FkwAV0-T9i3xrjlkPQwDZsYrh_wG6W49l4jULEU6oDOfgyhHBvvcr1KoiMIgfqlJSGxWfoJQ6XBNP24wafNt8eHWxeoMGUDGGY098yFTDkmUrGY-RLysRF-g6AKZTOWczME9FzKy2KVkQHzweSG446ysRL04Jynvm6boKoofTqzpxA635dArsJxiFgEbz9FkRoRaLd4BZBjeM__Oy3kGSaJEVoTxzK67-AyIvRTLA4jyPxmMAeyOW_n7RGVXOkwFMvMw9Fcupl1q5U-ITheMJ5XyjHZ-wUnn3vaCDhzFJKbWPi23Kze9sVeRPOBYzfr80udGy10wbUr4qTrTz81kodFP-6JCZ9QpYx8Gyoa-beW0QUsAy7L8lg2FxW3PmL8AFrLiSKFGnaATIlz2O1DnrEjuxHhE0jrLQs8xWZmyBw72ssO_yaFsA2ng6FTNz3y9Hg1SWS8MlrehO7xR_cnZafQ54CBfowtzo60')
-
-
-# In[ ]:
-
-
-
-
-
-# In[ ]:
 
 
 
