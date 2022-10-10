@@ -497,17 +497,22 @@ def checkEnrolled(address):
 
 
 ##For providing a token when connection starts
-def giveMeToken(address):
-    response = requests.get(
+def giveMeToken():
+
+    signedMessage = signMessage(my_account.address, my_account.privateKey) #Sign message to not expose the public address and to ensure proper identity
+
+    jsonobj = {
+    "address": my_account.address,
+    "signature": signedMessage
+     }
+
+    response = requests.post(
     rpcURL+"/giveMeToken/",
-    verify=False
+    verify=False,
+    json = jsonobj
     )
     print(response.text)
-    respJSON = json.loads(response.text)
-    pubKeyIBN = getPubKeyfromSig(respJSON["signature"], respJSON["message"] )
-    
-    
-    return pubKeyIBN
+
 
     
 
@@ -854,6 +859,7 @@ if __name__ == '__main__':
          
         #Start the ziti-edge-tunnel service and connects to the overlay
         if event == '-CONNECT-':
+            
             if routerStatus() == 1:
                 restartRouter()
             elif routerStatus() == 3 :
@@ -862,6 +868,7 @@ if __name__ == '__main__':
                 event, values = window.read(100)
                 window['-ISCONNECTED-'].update("Connecting...", text_color='blue')
             connecButtons()
+            giveMeToken()
             window['-ISCONNECTED-'].update("Connected", text_color='green')
             
             
