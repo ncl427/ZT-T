@@ -16,8 +16,6 @@ from flask import Flask
 from config.definitions import ROOT_DIR
 from email.message import EmailMessage
 from password_generator import PasswordGenerator
-from collections import namedtuple
-
 
 from dotenv import load_dotenv
 from os import getenv
@@ -404,27 +402,25 @@ def mintOTTNFT(address, endpointType, signature):
 
 # %%
 def mintSessionNFT(address, endpointType, identityInfo):
-    metadataList = []
     check_sum = w3.toChecksumAddress(my_account._address)
     roleList = identityInfo[3] #Array of roles per Identity
-    thePolicies = getPolicies()  ##NEED TO QUERY THE TOTAL POLICIES
-    metadataList = getActivePolicies(thePolicies, roleList) ##MAP roleList with the Total policies.
-   
-    #verifyExist()
-    ####Create a session NFT per unique policy Id that has the role only if NO SESSION TOKEN EXIST
+    activePolicies = getActivePolicies()
+    for p in activePolicies:
+        print("This Policy", p)
+    ##NEED TO QUERY THE TOTAL POLICIES
+    ##MAP roleList with the Total policies.
+    ##Create a session NFT per unique policy Id that has the role only if no session token exist
     #mintOTTNFT(ott, address)
-    for m in metadataList:
-        metadata = json.dumps(m._asdict()) #Each item in the metadatalist as JSON string
-        totalSupply = sessionToken_instance.functions.totalSupply().call() #Get the total amount of tokens created
-        check_sum = w3.toChecksumAddress(my_account._address)
-        print("Totalsupply", totalSupply, address)
-        tokenId = totalSupply+1
-        print(tokenId)
-        trans = sessionToken_instance.functions.mint(address,tokenId,endpointType,metadata).buildTransaction({"from": check_sum,"gasPrice": w3.eth.gas_price,"nonce": nonce,"chainId": chainId}) #build RAW transaction supported by BESU
-        updateNonce()
-        signed_txn = w3.eth.account.sign_transaction(trans, my_account.privateKey) #Sign transaction using our own private key
-        print(signed_txn.rawTransaction)
-        txn_hash = w3.eth.send_raw_transaction(signed_txn.rawTransaction) #Send transaction to BESU
+    totalSupply = sessionToken_instance.functions.totalSupply().call() #Get the total amount of tokens created
+    check_sum = w3.toChecksumAddress(my_account._address)
+    print("Totalsupply", totalSupply, address, ott)
+    tokenId = totalSupply+1
+    print(tokenId)
+    trans = sessionToken_instance.functions.mint(address,tokenId,encryptedOTT).buildTransaction({"from": check_sum,"gasPrice": w3.eth.gas_price,"nonce": nonce,"chainId": chainId}) #build RAW transaction supported by BESU
+    updateNonce()
+    signed_txn = w3.eth.account.sign_transaction(trans, my_account.privateKey) #Sign transaction using our own private key
+    print(signed_txn.rawTransaction)
+    txn_hash = w3.eth.send_raw_transaction(signed_txn.rawTransaction) #Send transaction to BESU
  
 
 
@@ -459,47 +455,17 @@ def verifyMFA(signedMessage, address):
     print(resultMFA)
     return resultMFA
 
-
-# %%
 def getPubKeyByAddress(address):
     resulPubKey = verify_instance.functions.getPubKeyByAddress(address).call({'from': ibnAddress}) #Get the pubKey of the account
     #print(resultMFA)
     return resulPubKey
 
-
-# %% Queries the blockchain for all the current policies
-def getPolicies():
+def getActivePolicies():
     policies = policyRules_instance.functions.getAllPolicies().call() #Get all the policies
     if len(policies) == 0:
         return 0
     else:
         return policies
-
-
-# %% Compare the list of assigned roles to a list of roles from each policy
-# returns an intersection
-def detect(list_a, list_b):
-    result = set(list_a) & set(list_b)
-    print(list(result))
-    
-    return result
-
-
-# %% Function that gets the policies which relate to an assigned role
-# TO DO - query the attribute of the active roles returned by the intersection.
-def getActivePolicies(policies, roles):
-    activePolicyList = []
-    for p in policies:
-        print("This Policy", p)
-        a = detect(roles,p[1])
-        if a: 
-            activePolicyList.append(Policy(p[0],p[4])) 
-        print("RESULT", a)
-    print("List of policies", activePolicyList)
-    #result = json.dumps(activePolicyList[0]._asdict())##Important for the metadata
-    #print("JSON", result)
-
-    return activePolicyList
     
 
 
@@ -710,7 +676,6 @@ if __name__ == '__main__':
     sessionToken_instance = w3.eth.contract(address = sessionNFT, abi = abiSessionNFT)
     policyRules_instance = w3.eth.contract(address = policyRules, abi = abiPolicy)
     verify_instance = w3.eth.contract(address = employeeRepo, abi = abiEmpRep) #Creates a contract instance for the employee Repo 
-    Policy = namedtuple("Policy",["policyId","hash"]) #Named Tuple for a policy
     #print(dir(nftOTT_instance.functions.mint))
     #print(dir(contract_instance.functions))
 
