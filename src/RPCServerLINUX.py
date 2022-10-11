@@ -17,6 +17,8 @@ from flask import Flask
 from config.definitions import ROOT_DIR_LINUX
 from email.message import EmailMessage
 from password_generator import PasswordGenerator
+from collections import namedtuple
+
 
 from dotenv import load_dotenv
 from os import getenv
