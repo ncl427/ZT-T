@@ -414,25 +414,29 @@ def mintSessionNFT(address, endpointType, identityInfo):
     metadataList = []
     check_sum = w3.toChecksumAddress(my_account._address)
     roleList = identityInfo[3] #Array of roles per Identity
+    
     thePolicies = getPolicies()  ##NEED TO QUERY THE TOTAL POLICIES
+    print("HERE", roleList, thePolicies )
     metadataList = getActivePolicies(thePolicies, roleList) ##MAP roleList with the Total policies.
-    print("HERE", roleList, thePolicies, metadataList )
+    
    
-    #verifyExist()
     ####Create a session NFT per unique policy Id that has the role only if NO SESSION TOKEN EXIST
-    #mintOTTNFT(ott, address)
-    for m in metadataList:
-        metadata = json.dumps(m._asdict()) #Each item in the metadatalist as JSON string
-        totalSupply = sessionToken_instance.functions.totalSupply().call() #Get the total amount of tokens created
-        check_sum = w3.toChecksumAddress(my_account._address)
-        print("Totalsupply", totalSupply, address)
-        tokenId = totalSupply+1
-        print(tokenId)
-        trans = sessionToken_instance.functions.mint(address,tokenId,endpointType,metadata).buildTransaction({"from": check_sum,"gasPrice": w3.eth.gas_price,"nonce": nonce,"chainId": chainId}) #build RAW transaction supported by BESU
-        updateNonce()
-        signed_txn = w3.eth.account.sign_transaction(trans, my_account.privateKey) #Sign transaction using our own private key
-        print(signed_txn.rawTransaction)
-        txn_hash = w3.eth.send_raw_transaction(signed_txn.rawTransaction) #Send transaction to BESU
+    if metadataList:
+        for m in metadataList:
+            metadata = json.dumps(m._asdict()) #Each item in the metadatalist as JSON string
+            totalSupply = sessionToken_instance.functions.totalSupply().call() #Get the total amount of tokens created
+            tokenExist = verifyExist(address, m)
+            if not tokenExist:
+
+                check_sum = w3.toChecksumAddress(my_account._address)
+                print("Totalsupply", totalSupply, address)
+                tokenId = totalSupply+1
+                print(tokenId)
+                trans = sessionToken_instance.functions.mint(address,tokenId,endpointType,metadata).buildTransaction({"from": check_sum,"gasPrice": w3.eth.gas_price,"nonce": nonce,"chainId": chainId}) #build RAW transaction supported by BESU
+                updateNonce()
+                signed_txn = w3.eth.account.sign_transaction(trans, my_account.privateKey) #Sign transaction using our own private key
+                print(signed_txn.rawTransaction)
+                txn_hash = w3.eth.send_raw_transaction(signed_txn.rawTransaction) #Send transaction to BESU
  
 
 
@@ -495,18 +499,36 @@ def detect(list_a, list_b):
 # TO DO - query the attribute of the active roles returned by the intersection.
 def getActivePolicies(policies, roles):
     activePolicyList = []
-    for p in policies:
-        print("This Policy", p)
-        a = detect(roles,p[1])
-        if a: 
-            activePolicyList.append(Policy(p[0],p[4])) 
-        print("RESULT", a)
-    print("List of policies", activePolicyList)
-    #result = json.dumps(activePolicyList[0]._asdict())##Important for the metadata
-    #print("JSON", result)
+    if policies and roles:
+
+        for p in policies:
+            print("This Policy", p)
+            a = detect(roles,p[1])
+            if a: 
+                activePolicyList.append(Policy(p[0],p[4])) 
+            print("RESULT", a)
+        print("List of policies", activePolicyList)
+        #result = json.dumps(activePolicyList[0]._asdict())##Important for the metadata
+        #print("JSON", result)
 
     return activePolicyList 
     
+# %% Verify if token exists
+def verifyExist(address, metadata):
+    sessionTokens = sessionToken_instance.functions.getOwnedNfts(address).call()
+    if len(sessionTokens) == 0:
+        return False
+    else:
+        for s in sessionTokens:
+            print("Session Token", s[0])
+            tokenURI = sessionToken_instance.functions.tokenURI(s[0]).call()
+            res = json.loads(tokenURI)
+            print("TOKEN URI",tokenURI)
+            print ("METADATA", metadata, metadata.policyId,res["policyId"])
+            if int(metadata.policyId) == int(res["policyId"]):
+                return True
+
+    return False
 
 
 # %%
