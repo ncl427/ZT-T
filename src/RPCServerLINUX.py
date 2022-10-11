@@ -416,6 +416,7 @@ def mintSessionNFT(address, endpointType, identityInfo):
     roleList = identityInfo[3] #Array of roles per Identity
     thePolicies = getPolicies()  ##NEED TO QUERY THE TOTAL POLICIES
     metadataList = getActivePolicies(thePolicies, roleList) ##MAP roleList with the Total policies.
+    print("HERE", roleList, thePolicies, metadataList )
    
     #verifyExist()
     ####Create a session NFT per unique policy Id that has the role only if NO SESSION TOKEN EXIST
