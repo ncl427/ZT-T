@@ -7,6 +7,7 @@
 
 
 # %%
+from calendar import calendar
 from web3 import Web3, HTTPProvider, EthereumTesterProvider
 from web3.middleware import geth_poa_middleware
 from flask import request
@@ -18,6 +19,7 @@ from config.definitions import ROOT_DIR_LINUX
 from email.message import EmailMessage
 from password_generator import PasswordGenerator
 from collections import namedtuple
+from datetime import datetime
 
 
 from dotenv import load_dotenv
@@ -30,6 +32,8 @@ import smtplib
 import ssl
 import subprocess
 import re
+import time
+import calendar
 
 ### FOR OUR BESU CHAIN ####
 ##Uncomment if neeeded###
@@ -505,7 +509,11 @@ def getActivePolicies(policies, roles):
             print("This Policy", p)
             a = detect(roles,p[1])
             if a: 
-                activePolicyList.append(Policy(p[0],p[4])) 
+                role =list(a)
+                roleAttribute =  policyRules_instance.functions.getFullRoleById(role[0]).call()
+                expiration = timetoEXP(json.loads(roleAttribute[2][0]))
+                print("ROLE ATTRIBUTES", expiration)
+                activePolicyList.append(Policy(p[0],p[4],expiration)) 
             print("RESULT", a)
         print("List of policies", activePolicyList)
         #result = json.dumps(activePolicyList[0]._asdict())##Important for the metadata
@@ -529,6 +537,18 @@ def verifyExist(address, metadata):
                 return True
 
     return False
+# %% Creates UTC timestamp
+def timetoEXP(timeinsecs):
+    current_datetime = datetime.utcnow()
+    current_timetuple = current_datetime.utctimetuple()
+    current_timestamp = calendar.timegm(current_timetuple)
+    print(current_timestamp)
+    current_timestamp = int(current_timestamp) + int(timeinsecs["exp"])
+
+    print(current_timestamp)
+    return current_timestamp
+
+
 
 
 # %%
@@ -737,7 +757,7 @@ if __name__ == '__main__':
     sessionToken_instance = w3.eth.contract(address = sessionNFT, abi = abiSessionNFT)
     policyRules_instance = w3.eth.contract(address = policyRules, abi = abiPolicy)
     verify_instance = w3.eth.contract(address = employeeRepo, abi = abiEmpRep) #Creates a contract instance for the employee Repo 
-    Policy = namedtuple("Policy",["policyId","hash"]) #Named Tuple for a policy    #print(dir(nftOTT_instance.functions.mint))
+    Policy = namedtuple("Policy",["policyId","hash", "exp"]) #Named Tuple for a policy    #print(dir(nftOTT_instance.functions.mint))
     #print(dir(contract_instance.functions))
 
     
