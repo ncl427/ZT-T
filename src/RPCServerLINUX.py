@@ -3,6 +3,7 @@
 # %%
 #!pip install flask
 #!pip install random-password-generator
+#!pip install python-dotenv
 
 
 # %%
@@ -30,15 +31,19 @@ import re
 
 ### FOR OUR BESU CHAIN ####
 ##Uncomment if neeeded###
+load_dotenv()
 
 permissionedAddress = os.getenv('IDENTITYCONTRACT')
 nftOTT = os.getenv('OTTADDRESS') #Address of the NFT contract
+sessionNFT = os.getenv('SESSIONTOKENADDRESS') #Address of the session token contract
+policyRules = os.getenv('POLICYCONTRACT') #Address of the policy contract
 employeeRepo= os.getenv('MFAREPO')
 ###
 web3Prov = os.getenv('WEB3PROVIDER')
 #authURL = "https://orchestrator.ncl.lab:1280/edge/management/v1/authenticate?method=password"
 apiURL = os.getenv('ZITIRPC')
-chainId = os.getenv('CHAINID')
+#chainId = os.getenv('CHAINID')
+chainId = 2022
 
 ibnAddress = os.getenv('IBNADDRESS')
 emailUser = os.getenv('EMAILUSER')
@@ -73,7 +78,12 @@ with open(abiFolder+"/"+"ottNFT.json") as file:
     
 with open(abiFolder+"/"+"repoList.json") as file:
     abiEmpRep = json.load(file)
-            
+
+with open(abiFolder+"/"+"sessionNFT.json") as file:
+    abiSessionNFT = json.load(file)
+
+with open(abiFolder+"/"+"policyRules.json") as file:
+    abiPolicy = json.load(file)          
 obj = {
     "username": os.getenv('ZITIUSERNAME'),
     "password": os.getenv('ZITIPWD')
@@ -289,6 +299,20 @@ def getPubKeyfromSig(signedmessage, message):
     print(substring)
     return substring
 
+# %%
+def getAddressfromSig(signedmessage, message):
+    cmd = """node -e 'require(\"./recoverAddress.js\").recoverAddress(\"{}\",\"{}\")'"""
+    #cmd = """node -e 'require(\"./recoverSig.js\").recoverPubKey(\"{},{}\")'"""
+    #cmd = 'node -e \"require(\'./recoverAddress.js\').recoverAddress(\'{}\',\'{}\')\"' #If fail, check quotes 
+    #pattern = r'\\n(.*)\\n'
+    pattern = r'b\'(.*)\\n'
+
+    output = subprocess.check_output(cmd.format(signedmessage, message), shell=True)
+    print(cmd.format(signedmessage,message))
+    print(output)
+    substring = re.search(pattern, str(output)).group(1)
+    print(substring)
+    return substring
 
 # %%
 def decryptMessage(message, privKey):
@@ -383,6 +407,29 @@ def mintOTTNFT(address, endpointType, signature):
     print(signed_txn.rawTransaction)
     txn_hash = w3.eth.send_raw_transaction(signed_txn.rawTransaction) #Send transaction to BESU
 
+# %%
+def mintSessionNFT(address, endpointType, identityInfo):
+    metadataList = []
+    check_sum = w3.toChecksumAddress(my_account._address)
+    roleList = identityInfo[3] #Array of roles per Identity
+    thePolicies = getPolicies()  ##NEED TO QUERY THE TOTAL POLICIES
+    metadataList = getActivePolicies(thePolicies, roleList) ##MAP roleList with the Total policies.
+   
+    #verifyExist()
+    ####Create a session NFT per unique policy Id that has the role only if NO SESSION TOKEN EXIST
+    #mintOTTNFT(ott, address)
+    for m in metadataList:
+        metadata = json.dumps(m._asdict()) #Each item in the metadatalist as JSON string
+        totalSupply = sessionToken_instance.functions.totalSupply().call() #Get the total amount of tokens created
+        check_sum = w3.toChecksumAddress(my_account._address)
+        print("Totalsupply", totalSupply, address)
+        tokenId = totalSupply+1
+        print(tokenId)
+        trans = sessionToken_instance.functions.mint(address,tokenId,endpointType,metadata).buildTransaction({"from": check_sum,"gasPrice": w3.eth.gas_price,"nonce": nonce,"chainId": chainId}) #build RAW transaction supported by BESU
+        updateNonce()
+        signed_txn = w3.eth.account.sign_transaction(trans, my_account.privateKey) #Sign transaction using our own private key
+        print(signed_txn.rawTransaction)
+        txn_hash = w3.eth.send_raw_transaction(signed_txn.rawTransaction) #Send transaction to BESU
  
 
 
@@ -416,13 +463,46 @@ def verifyMFA(signedMessage, address):
     resultMFA = verify_instance.functions.verifyMFA(signedMessage, address).call({'from': ibnAddress}) #Get the status of the account
     print(resultMFA)
     return resultMFA
-
+# %%
 def getPubKeyByAddress(address):
     resulPubKey = verify_instance.functions.getPubKeyByAddress(address).call({'from': ibnAddress}) #Get the pubKey of the account
     #print(resultMFA)
     return resulPubKey
 
+
+# %% Queries the blockchain for all the current policies
+def getPolicies():
+    policies = policyRules_instance.functions.getAllPolicies().call() #Get all the policies
+    if len(policies) == 0:
+        return 0
+    else:
+        return policies
+
+
+# %% Compare the list of assigned roles to a list of roles from each policy
+# returns an intersection
+def detect(list_a, list_b):
+    result = set(list_a) & set(list_b)
+    print(list(result))
     
+    return result
+
+
+# %% Function that gets the policies which relate to an assigned role
+# TO DO - query the attribute of the active roles returned by the intersection.
+def getActivePolicies(policies, roles):
+    activePolicyList = []
+    for p in policies:
+        print("This Policy", p)
+        a = detect(roles,p[1])
+        if a: 
+            activePolicyList.append(Policy(p[0],p[4])) 
+        print("RESULT", a)
+    print("List of policies", activePolicyList)
+    #result = json.dumps(activePolicyList[0]._asdict())##Important for the metadata
+    #print("JSON", result)
+
+    return activePolicyList 
     
 
 
@@ -474,6 +554,10 @@ def isPerm(address):
     result = contract_instance.functions.accountPermitted(address).call() #Get the status of the account
     return result
 
+def isEnrolled(address):
+    result = contract_instance.functions.getFullByAddress(address).call() #Get the status of the account
+    return result
+
 @app.route('/giveMePub/', methods=['GET'])
 def giveMePub():
     result = signMessage(my_account.address, my_account.privateKey) #Get the status of the account
@@ -483,6 +567,28 @@ def giveMePub():
     }
     return resultObj
 
+@app.route('/giveMeToken/', methods=['POST'])
+def giveMeToken():
+    try:
+        requestJSON = request.json
+        print(requestJSON)
+        address = requestJSON["address"]
+        signature = requestJSON["signature"]
+        print(address)
+        realAddress = getAddressfromSig(signature, address)
+        perm = isPerm(realAddress) #Get the status of the account
+        enrolled = isEnrolled(realAddress)
+        if not perm and not enrolled[1]:
+            e = "An error ocurred: " + "Address not permissioned"
+            return str(e)
+        if perm and enrolled[1]:
+            print("TEEEEEEEEEEEEEEEEEEEEEST")
+            mintSessionNFT(address, enrolled[2], enrolled)
+            return "The account " + address + "has been issued a session token: "
+         
+    except Exception as e:
+        print("An error ocurred: " + str(e))
+        return str(e)
 @app.route('/verifyEnrolled/', methods=['GET'])
 def verifyEnrolled():
     args = request.args
@@ -500,9 +606,8 @@ def verifyEnrolled():
     if len(auth) == 0:
         return "False"
     else:
-        result = contract_instance.functions.getFullByAddress(identity).call() #Get the status of the account
-        isEnrolled = result[1]
-        if isEnrolled:
+        enrolled = isEnrolled(identity) 
+        if enrolled[1]:
             return "True"
         else:
             idHash = Web3.keccak(text=identityJSON)    #Hashes the Identity for storing in the blockchain
@@ -604,8 +709,10 @@ if __name__ == '__main__':
     nonce = 0 #Need to find a better way for nonce tracking
     contract_instance = w3.eth.contract(address = permissionedAddress, abi = abi) #Creates a contract instance for the permissions
     nftOTT_instance = w3.eth.contract(address = nftOTT, abi = abiNFT) #Creates a contract instance for the OTT-NFT
+    sessionToken_instance = w3.eth.contract(address = sessionNFT, abi = abiSessionNFT)
+    policyRules_instance = w3.eth.contract(address = policyRules, abi = abiPolicy)
     verify_instance = w3.eth.contract(address = employeeRepo, abi = abiEmpRep) #Creates a contract instance for the employee Repo 
-    #print(dir(nftOTT_instance.functions.mint))
+    Policy = namedtuple("Policy",["policyId","hash"]) #Named Tuple for a policy    #print(dir(nftOTT_instance.functions.mint))
     #print(dir(contract_instance.functions))
 
     

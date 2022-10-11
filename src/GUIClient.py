@@ -47,7 +47,7 @@ import psutil
 
 ### FOR OUR BESU CHAIN ####
 ##Uncomment if neeeded###
-
+load_dotenv()
 nftOTT = os.getenv('OTTADDRESS') #Address of the NFT contract
 permissionedAddress = os.getenv('IDENTITYCONTRACT')
 
@@ -85,7 +85,7 @@ with open(abiFolder+"/"+"accountRules.json") as file:
     abi = json.load(file)
     
 ##os.environ["ZITI_IDENTITIES"] = idFolder+"/"+"myId.json"
-#os.environ["ZITI_IDENTITIES"] = ""
+os.environ["ZITI_IDENTITIES"] = ""
 from openziti import enroll as ztenroll ##Environment variable is acting weird.
 
 

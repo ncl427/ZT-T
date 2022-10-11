@@ -3,6 +3,8 @@
 # %%
 #!pip install flask
 #!pip install random-password-generator
+#!pip install python-dotenv
+
 
 
 # %%
@@ -32,7 +34,7 @@ import re
 
 ### FOR OUR BESU CHAIN ####
 ##Uncomment if neeeded###
-
+load_dotenv()
 permissionedAddress = os.getenv('IDENTITYCONTRACT')
 nftOTT = os.getenv('OTTADDRESS') #Address of the NFT contract
 sessionNFT = os.getenv('SESSIONTOKENADDRESS') #Address of the session token contract
@@ -43,7 +45,8 @@ employeeRepo= os.getenv('MFAREPO')
 web3Prov = os.getenv('WEB3PROVIDER')
 #authURL = "https://orchestrator.ncl.lab:1280/edge/management/v1/authenticate?method=password"
 apiURL = os.getenv('ZITIRPC')
-chainId = os.getenv('CHAINID')
+#chainId = os.getenv('CHAINID')
+chainId = 2022
 
 ibnAddress = os.getenv('IBNADDRESS')
 emailUser = os.getenv('EMAILUSER')
@@ -580,7 +583,7 @@ def giveMeToken():
             return str(e)
         if perm and enrolled[1]:
             print("TEEEEEEEEEEEEEEEEEEEEEST")
-            mintSessionNFT(address, endpointType, enrolled)
+            mintSessionNFT(address, enrolled[2], enrolled)
             return "The account " + address + "has been issued a session token: "
          
     except Exception as e:
@@ -702,6 +705,8 @@ def createEnrollment():
 if __name__ == '__main__':
     w3 = Web3(HTTPProvider(web3Prov)) #If access to our Local lockchain
     ctx = ssl.create_default_context() #secure ssl context for email
+    
+    print("PERMISSIONED CONTRACT", permissionedAddress, chainId)
     
     w3.middleware_onion.inject(geth_poa_middleware, layer=0) #For compatibility with POA consensus chains
     nonce = 0 #Need to find a better way for nonce tracking
