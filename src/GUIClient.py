@@ -512,7 +512,7 @@ def checkEnrolled(address):
 
 
 
-##For providing a token when connection starts
+# %% For providing a token when connection starts
 def giveMeToken():
 
     signedMessage = signMessage(my_account.address, my_account.privateKey) #Sign message to not expose the public address and to ensure proper identity
@@ -528,6 +528,23 @@ def giveMeToken():
     json = jsonobj
     )
     print(response.text)
+
+# %% For verifying token when connection starts
+
+def verifyToken():
+    
+    jsonobj = {
+    "address": my_account.address,
+    "tokenId": ''
+     }
+
+    response = requests.post(
+    rpcURL+"/verifyToken/",
+    verify=False,
+    json = jsonobj
+    )
+    print(response.text)
+
 
 
     
@@ -888,6 +905,7 @@ if __name__ == '__main__':
                 window['-ISCONNECTED-'].update("Connecting...", text_color='blue')
             connecButtons()
             giveMeToken()
+            verifyToken()
             window['-ISCONNECTED-'].update("Connected", text_color='green')
             
             
