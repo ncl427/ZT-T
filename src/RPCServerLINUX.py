@@ -688,7 +688,7 @@ def verifyToken():
         return str(res)
          
     except Exception as e:
-        print("An error ocurred: " + str(e))
+        print("An error has ocurred: " + str(e))
         return str(e)
 
 @app.route('/verifyEnrolled/', methods=['GET'])
