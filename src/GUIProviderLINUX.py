@@ -46,8 +46,12 @@ import psutil
 
 ### FOR OUR BESU CHAIN ####
 ##Uncomment if neeeded###
+load_dotenv()
+
 
 nftOTT = os.getenv('OTTADDRESS') #Address of the NFT contract
+sessionNFT = os.getenv('SESSIONTOKENADDRESS') #Address of the session token contract
+
 permissionedAddress = os.getenv('IDENTITYCONTRACT')
 
 web3Prov = os.getenv('WEB3PROVIDER')
@@ -82,6 +86,12 @@ with open(abiFolder+"/"+"ottNFT.json") as file:
     
 with open(abiFolder+"/"+"accountRules.json") as file:
     abi = json.load(file)
+
+with open(abiFolder+"/"+"sessionNFT.json") as file:
+    abiSessionNFT = json.load(file)
+    
+##os.environ["ZITI_IDENTITIES"] = idFolder+"/"+"myId.json"
+os.environ["ZITI_IDENTITIES"] = ""
     
 ##os.environ["ZITI_IDENTITIES"] = idFolder+"/"+"myId.json"
 #os.environ["ZITI_IDENTITIES"] = ""
@@ -126,7 +136,17 @@ def setApproval(address):
     tx_receipt = w3.eth.wait_for_transaction_receipt(txn_hash.hex())  #Gets a receipt from the Blockchain
     return tx_receipt
 
+# %%Sets approval of Session NFTs
 
+def setSessionApproval(address):
+    tokensOwned = sessionToken_instance.functions.balanceOf(my_account._address).call() #Get the status of the account
+    check_sum = w3.toChecksumAddress(my_account._address)
+    print("Tokens Owned", tokensOwned)
+    trans = sessionToken_instance.functions.setApprovalForAll(address, True).buildTransaction({"from": check_sum,"gasPrice": w3.eth.gas_price,"nonce": w3.eth.get_transaction_count(check_sum),"chainId": 2022}) #build RAW transaction supported by BESU
+    signed_txn = w3.eth.account.sign_transaction(trans, my_account.privateKey) #Sign transaction using our own private key
+    txn_hash = w3.eth.send_raw_transaction(signed_txn.rawTransaction) #Send transaction to BESU
+    #tx_receipt = w3.eth.wait_for_transaction_receipt(txn_hash.hex())  #Gets a receipt from the Blockchain
+    #return tx_receipt
 # In[5]:
 
 
@@ -344,8 +364,12 @@ def verifyUser(empId, email, pubKeyIBN):
 def signMessage(message, privKey):
     singlequote ="'"
     doublequote = '"'
-    cmd = 'node -e \"require(\'./signMe.js\').signMessage(\'{}\',\'{}\')\"' #If fail, check quotes
-    pattern = r'\\n(.*)\\n'
+    cmd = """node -e 'require(\"./signMe.js\").signMessage(\"{}\",\"{}\")'"""
+
+    #cmd = 'node -e \"require(\'./signMe.js\').signMessage(\'{}\',\'{}\')\"' #If fail, check quotes
+    #pattern = r'\\n(.*)\\n'
+    pattern = r'b\'(.*)\\n'
+
     
  
     privKey = w3.toHex(privKey)
@@ -363,9 +387,10 @@ def signMessage(message, privKey):
 
 
 def encryptMessage(message, publicKey):
-    #cmd = """node -e 'require(\"./encrypt.js\").encrypt(\"{},{}\")'"""
-    cmd = 'node -e \"require(\'./encrypt.js\').encrypt(\'{}\',\'{}\')\"' #If fail, check quotes
-    pattern = r'\\n(.*)\\n'
+    cmd = """node -e 'require(\"./encrypt.js\").encrypt(\"{}\",\"{}\")'"""
+    #cmd = 'node -e \"require(\'./encrypt.js\').encrypt(\'{}\',\'{}\')\"' #If fail, check quotes
+    #pattern = r'\\n(.*)\\n'
+    pattern = r'b\'(.*)\\n'
     
  
     #privKey = w3.toHex(privKey)
@@ -385,9 +410,11 @@ def encryptMessage(message, publicKey):
 
 
 def getPubKeyfromSig(signedmessage, message):
-    #cmd = """node -e 'require(\"./recoverSig.js\").recoverPubKey(\"{},{}\")'"""
-    cmd = 'node -e \"require(\'./recoverSig.js\').recoverPubKey(\'{}\',\'{}\')\"' #If fail, check quotes 
-    pattern = r'\\n(.*)\\n'
+    cmd = """node -e 'require(\"./recoverSig.js\").recoverPubKey(\"{}\",\"{}\")'"""
+    #cmd = 'node -e \"require(\'./recoverSig.js\').recoverPubKey(\'{}\',\'{}\')\"' #If fail, check quotes 
+    #pattern = r'\\n(.*)\\n'
+    pattern = r'b\'(.*)\\n'
+
 
     output = subprocess.check_output(cmd.format(signedmessage, message), shell=True)
     print(cmd.format(signedmessage,message))
@@ -504,7 +531,22 @@ def checkEnrolled(address):
 #            return True
 #    return False
 
+##For providing a token when connection starts
+def giveMeToken():
 
+    signedMessage = signMessage(my_account.address, my_account.privateKey) #Sign message to not expose the public address and to ensure proper identity
+
+    jsonobj = {
+    "address": my_account.address,
+    "signature": signedMessage
+     }
+
+    response = requests.post(
+    rpcURL+"/giveMeToken/",
+    verify=False,
+    json = jsonobj
+    )
+    print(response.text)
 
     
 
@@ -605,6 +647,8 @@ if __name__ == '__main__':
     print ("Latest Ethereum block number" , w3.eth.block_number)
     contract_instance = w3.eth.contract(address = permissionedAddress, abi = abi) #Creates a contract instance for the permissions
     nftOTT_instance = w3.eth.contract(address = nftOTT, abi = abiNFT) #Creates a contract instance for the OTT-NFT
+    sessionToken_instance = w3.eth.contract(address = sessionNFT, abi = abiSessionNFT)
+
     
     file_exists = exists(keyFolder+"/"+"encyptedKey.json")
     num_retries = 3
@@ -809,6 +853,8 @@ if __name__ == '__main__':
         if event == '-ENROLL-':
             myOTT = getmyOTT(my_account.address)
             setApproval(ibnAddress)
+            setSessionApproval(ibnAddress)
+
             if (myOTT == 0 and isPerm(my_account.address)):
                 createEnrollment(my_account.address)
                 eventFilter()
