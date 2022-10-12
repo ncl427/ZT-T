@@ -566,7 +566,7 @@ def isTokenValid(tokenId, address):
     res = json.loads(tokenURI)
     isExpired = verifyEXP(res["exp"])
     if isExpired:
-        burnSessionToken(owner, tokenId)
+        burnSessionToken(owner, int(tokenId))
         return f"Session Token {tokenId} of {owner} is expired and was burned"
     else:
         return f"Session Token {tokenId} of {address} is still valid"
@@ -678,14 +678,25 @@ def giveMeToken():
 
 @app.route('/verifyToken/', methods=['POST'])
 def verifyToken():
+    res = ''
     try:
         requestJSON = request.json
         print(requestJSON)
         address = requestJSON["address"]
         tokenId = requestJSON["tokenId"]
         print(address)
-        res = isTokenValid(tokenId, address)
-        return str(res)
+        if tokenId == '':
+            sessionTokens = sessionToken_instance.functions.getOwnedNfts(address).call()
+            if len(sessionTokens) != 0:
+                for s in sessionTokens:
+                  print("Session Token", s[0])
+                  res = isTokenValid(s[0], address)
+            
+            return str(res)
+
+        else:
+            res = isTokenValid(tokenId, address)
+            return str(res)
          
     except Exception as e:
         print("An error has ocurred: " + str(e))
