@@ -574,25 +574,25 @@ def isTokenValid(tokenId, address):
 
 
 # %%
-### NEED TO change to a better version.... Save the ID somewhere (Get it from the createOTT part)###
+### Obtains info of the identity in Ziti
 def getIdentityInfoN(identity):
     authResponse = requests.post(f"{apiURL}authenticate?method=password", json=obj, verify=False,)
     jsonResponse = json.loads(authResponse.text)
     #print(authResponse.text)
 
     identityInfo = requests.get(
-    f"{apiURL}identities?filter=(name contains \"{identity}\")",
+    f"{apiURL}identities/{identity}",
     verify=False,
     headers={"zt-session": jsonResponse['data']['token']}
         )
     identityResponse = json.loads(identityInfo.text)
     if len(identityResponse) != 0:
-        authenticators = identityResponse["data"][0]['authenticators']
+        authenticators = identityResponse["data"]['authenticators']
         responseObj = {
-            "id": identityResponse["data"][0]["id"],
-            "name": identityResponse["data"][0]["name"],
-            "createdAt": identityResponse["data"][0]["createdAt"],
-            "updatedAt": identityResponse["data"][0]["updatedAt"],
+            "id": identityResponse["data"]["id"],
+            "name": identityResponse["data"]["name"],
+            "createdAt": identityResponse["data"]["createdAt"],
+            "updatedAt": identityResponse["data"]["updatedAt"],
             "auth": authenticators        
         }
         return responseObj
@@ -698,8 +698,7 @@ def verifyEnrolled():
     tokenId = args.get('tokenId')
     type = args.get('type')
     
-    ##burns the used token
-    burnOTT(identity, int(tokenId))
+
     ##
     identityObject = getIdentityInfoN(identity)
     auth =identityObject["auth"]
@@ -710,10 +709,14 @@ def verifyEnrolled():
     else:
         enrolled = isEnrolled(identity) 
         if enrolled[1]:
+            ##burns the used token
+            burnOTT(identity, int(tokenId))
             return "True"
         else:
             idHash = Web3.keccak(text=identityJSON)    #Hashes the Identity for storing in the blockchain
             updateAccount(identity, str(idHash), True, type)        #Updates the status of the identity
+            ##burns the used token
+            burnOTT(identity, int(tokenId))
             return "True"
             
         
