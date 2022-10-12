@@ -548,6 +548,28 @@ def timetoEXP(timeinsecs):
     print(current_timestamp)
     return current_timestamp
 
+# %% Verifies expiration time
+def verifyEXP(timeinsecs):
+    current_datetime = datetime.utcnow()
+    current_timetuple = current_datetime.utctimetuple()
+    current_timestamp = calendar.timegm(current_timetuple)
+    print(current_timestamp)
+    if int(current_timestamp) > int(timeinsecs):
+        return True
+    else:
+        return False
+
+# %% Checks validity of session tokens, burn if invalid
+def isTokenValid(tokenId, address):
+    tokenURI = sessionToken_instance.functions.tokenURI(tokenId).call()
+    owner = sessionToken_instance.functions.ownerOf(tokenId).call()
+    res = json.loads(tokenURI)
+    isExpired = verifyEXP(res["exp"])
+    if isExpired:
+        burnSessionToken(owner, tokenId)
+        return f"Session Token {tokenId} of {owner} is expired and was burned"
+    else:
+        return f"Session Token {tokenId} of {address} is still valid"
 
 
 
@@ -578,12 +600,9 @@ def getIdentityInfoN(identity):
         return ''   ##Check a better way to return
 
 
-# %%
-app = Flask(__name__)
-@app.route('/test/', methods=['GET', 'POST'])
-def welcome():
-    return "IBN Zero Trust!"
 
+
+# %% Burn used Enrollment tokens
 def burnOTT(address, tokenId):
     tokensOwned = nftOTT_instance.functions.balanceOf(address).call() #Get the status of the account
     check_sum = w3.toChecksumAddress(my_account._address)
@@ -594,6 +613,28 @@ def burnOTT(address, tokenId):
     txn_hash = w3.eth.send_raw_transaction(signed_txn.rawTransaction) #Send transaction to BESU
     #tx_receipt = w3.eth.wait_for_transaction_receipt(txn_hash.hex())  #Gets a receipt from the Blockchain
     #return tx_receipt
+
+# %% Burn expired Session tokens
+def burnSessionToken(address, tokenId):
+    tokensOwned = sessionToken_instance.functions.balanceOf(address).call() #Get the status of the account
+    check_sum = w3.toChecksumAddress(my_account._address)
+    print("Tokens Owned", tokensOwned)
+    trans = sessionToken_instance.functions.burn(tokenId).buildTransaction({"from": check_sum,"gasPrice": w3.eth.gas_price,"nonce": nonce,"chainId": chainId}) #build RAW transaction supported by BESU
+    updateNonce()
+    signed_txn = w3.eth.account.sign_transaction(trans, my_account.privateKey) #Sign transaction using our own private key
+    txn_hash = w3.eth.send_raw_transaction(signed_txn.rawTransaction) #Send transaction to BESU
+    #tx_receipt = w3.eth.wait_for_transaction_receipt(txn_hash.hex())  #Gets a receipt from the Blockchain
+    #return tx_receipt
+
+# %%
+app = Flask(__name__)
+@app.route('/test/', methods=['GET', 'POST'])
+def welcome():
+    return "IBN Zero Trust!"
+
+
+
+
 
 def isPerm(address):
     result = contract_instance.functions.accountPermitted(address).call() #Get the status of the account
@@ -634,6 +675,22 @@ def giveMeToken():
     except Exception as e:
         print("An error ocurred: " + str(e))
         return str(e)
+
+@app.route('/verifyToken/', methods=['POST'])
+def verifyToken():
+    try:
+        requestJSON = request.json
+        print(requestJSON)
+        address = requestJSON["address"]
+        tokenId = requestJSON["tokenId"]
+        print(address)
+        res = isTokenValid(tokenId, address)
+        return str(res)
+         
+    except Exception as e:
+        print("An error ocurred: " + str(e))
+        return str(e)
+
 @app.route('/verifyEnrolled/', methods=['GET'])
 def verifyEnrolled():
     args = request.args
