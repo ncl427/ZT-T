@@ -57,6 +57,7 @@ web3Prov = os.getenv('WEB3PROVIDER')
 rpcURL = os.getenv('IBNBACKEND')
 
 ibnAddress = os.getenv('IBNADDRESS')
+zitiTunnel = os.getenv('EDGETUNNEL')
 
 ### FOR MY LOCAL TEST ###
 ### Uncomment if needed###
@@ -904,8 +905,9 @@ if __name__ == '__main__':
                 event, values = window.read(100)
                 window['-ISCONNECTED-'].update("Connecting...", text_color='blue')
             connecButtons()
-            giveMeToken()
             verifyToken()
+            giveMeToken()
+            
             window['-ISCONNECTED-'].update("Connected", text_color='green')
             
             
