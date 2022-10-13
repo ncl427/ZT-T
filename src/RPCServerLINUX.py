@@ -421,7 +421,7 @@ def mintSessionNFT(address, endpointType, identityInfo):
     
     thePolicies = getPolicies()  ##NEED TO QUERY THE TOTAL POLICIES
     print("HERE", roleList, thePolicies )
-    metadataList = getActivePolicies(thePolicies, roleList) ##MAP roleList with the Total policies.
+    metadataList = getActivePolicies(thePolicies, roleList, endpointType, address) ##MAP roleList with the Total policies.
     
    
     ####Create a session NFT per unique policy Id that has the role only if NO SESSION TOKEN EXIST
@@ -501,23 +501,33 @@ def detect(list_a, list_b):
 
 # %% Function that gets the policies which relate to an assigned role
 # TO DO - query the attribute of the active roles returned by the intersection.
-def getActivePolicies(policies, roles):
+def getActivePolicies(policies, roles, type, address):
     activePolicyList = []
     if policies and roles:
+        if type == "Provider":
+            for p in policies:
+                print("This Policy", p)
+                if address == p[3]: 
+                    expiration = 32496789304
+                    activePolicyList.append(Policy(p[0],p[4],expiration)) 
+            print("List of policies", activePolicyList)
+            #result = json.dumps(activePolicyList[0]._asdict())##Important for the metadata
+            #print("JSON", result)
 
-        for p in policies:
-            print("This Policy", p)
-            a = detect(roles,p[1])
-            if a: 
-                role =list(a)
-                roleAttribute =  policyRules_instance.functions.getFullRoleById(role[0]).call()
-                expiration = timetoEXP(json.loads(roleAttribute[2][0]))
-                print("ROLE ATTRIBUTES", expiration)
-                activePolicyList.append(Policy(p[0],p[4],expiration)) 
-            print("RESULT", a)
-        print("List of policies", activePolicyList)
-        #result = json.dumps(activePolicyList[0]._asdict())##Important for the metadata
-        #print("JSON", result)
+        else:
+            for p in policies:
+                print("This Policy", p)
+                a = detect(roles,p[1])
+                if a: 
+                    role =list(a)
+                    roleAttribute =  policyRules_instance.functions.getFullRoleById(role[0]).call()
+                    expiration = timetoEXP(json.loads(roleAttribute[2][0]))
+                    print("ROLE ATTRIBUTES", expiration)
+                    activePolicyList.append(Policy(p[0],p[4],expiration)) 
+                print("RESULT", a)
+            print("List of policies", activePolicyList)
+            #result = json.dumps(activePolicyList[0]._asdict())##Important for the metadata
+            #print("JSON", result)
 
     return activePolicyList 
     
