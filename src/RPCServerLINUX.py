@@ -503,7 +503,7 @@ def detect(list_a, list_b):
 # TO DO - query the attribute of the active roles returned by the intersection.
 def getActivePolicies(policies, roles, type, address):
     activePolicyList = []
-    if policies and roles:
+    if policies:
         if type == "Provider":
             for p in policies:
                 print("This Policy", p)
@@ -514,7 +514,7 @@ def getActivePolicies(policies, roles, type, address):
             #result = json.dumps(activePolicyList[0]._asdict())##Important for the metadata
             #print("JSON", result)
 
-        else:
+        elif roles:
             for p in policies:
                 print("This Policy", p)
                 a = detect(roles,p[1])

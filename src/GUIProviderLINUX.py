@@ -889,9 +889,9 @@ if __name__ == '__main__':
                         sg.popup("An error ocurred")
                         print("error ocurred", e)
 
-            if event == '-CONNECT-':
-                print("WHYYY")
-                giveMeToken()
+        if event == '-CONNECT-':
+            print("WHYYY")
+            giveMeToken()
 
           
             
