@@ -123,7 +123,7 @@ def safePasswordInput( my_encKey, passw, num_retries):
                 raise error
 
 
-# In[4]:
+# %%Sets approval of OTT NFTs
 
 
 def setApproval(address):
@@ -424,6 +424,28 @@ def getPubKeyfromSig(signedmessage, message):
     return substring
 
 
+# In[22]:
+
+
+def decryptMessage(message, privKey):
+    cmd = """node -e 'require(\"./decrypt.js\").decrypt(\"{}\",\"{}\")'"""
+    #cmd = 'node -e \"require(\'./decrypt.js\').decrypt(\'{}\',\'{}\')\"' #If fail, check quotes
+    pattern = r'b\'(.*)\\n'
+    
+ 
+    privKey = w3.toHex(privKey)
+    #print(privKey)
+    output = subprocess.check_output(cmd.format(message, privKey), shell=True)
+    #print(output)
+
+    
+    
+    #signed_message = w3.eth.sign(privKey,text=message)
+    print(cmd.format(message,privKey))
+    substring = re.search(pattern, str(output)).group(1)
+    print(substring)
+    return substring
+
 # In[19]:
 
 
@@ -477,27 +499,7 @@ def createEnrollment(address):
     
 
 
-# In[22]:
 
-
-def decryptMessage(message, privKey):
-    #cmd = """node -e 'require(\"./encrypt.js\").encrypt(\"{},{}\")'"""
-    cmd = 'node -e \"require(\'./decrypt.js\').decrypt(\'{}\',\'{}\')\"' #If fail, check quotes
-    pattern = r'\\n(.*)\\n'
-    
- 
-    privKey = w3.toHex(privKey)
-    #print(privKey)
-    output = subprocess.check_output(cmd.format(message, privKey), shell=True)
-    #print(output)
-
-    
-    
-    #signed_message = w3.eth.sign(privKey,text=message)
-    print(cmd.format(message,privKey))
-    substring = re.search(pattern, str(output)).group(1)
-    print(substring)
-    return substring
 
 
 # In[23]:
@@ -556,7 +558,7 @@ def giveMeToken():
 
 def restartRouter():
     serviceName = "ziti"
-    win32serviceutil.RestartService(serviceName)
+    #win32serviceutil.RestartService(serviceName)
     
 
 
@@ -886,6 +888,11 @@ if __name__ == '__main__':
                 except Exception as e:
                         sg.popup("An error ocurred")
                         print("error ocurred", e)
+
+        if event == '-CONNECT-':
+            print("WHYYY")
+            giveMeToken()
+
           
             
     window.close()
