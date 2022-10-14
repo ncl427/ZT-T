@@ -1,3 +1,9 @@
+# exclude Keys
+Keys/*
+
+# exception to the rule
+!Keys/.gitkeep 
+
 # Logs
 logs
 *.log
@@ -126,8 +132,4 @@ dist
 .yarn/install-state.gz
 .pnp.*
 
-# exclude Keys
-Keys/*
 
-# exception to the rule
-!Keys/.gitkeep 
