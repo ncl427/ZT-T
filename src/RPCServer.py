@@ -8,6 +8,7 @@
 
 
 # %%
+from calendar import calendar
 from web3 import Web3, HTTPProvider, EthereumTesterProvider
 from web3.middleware import geth_poa_middleware
 from flask import request
@@ -19,6 +20,8 @@ from config.definitions import ROOT_DIR
 from email.message import EmailMessage
 from password_generator import PasswordGenerator
 from collections import namedtuple
+from datetime import datetime
+
 
 
 from dotenv import load_dotenv
@@ -31,6 +34,8 @@ import smtplib
 import ssl
 import subprocess
 import re
+import time
+import calendar
 
 ### FOR OUR BESU CHAIN ####
 ##Uncomment if neeeded###
@@ -410,24 +415,29 @@ def mintSessionNFT(address, endpointType, identityInfo):
     metadataList = []
     check_sum = w3.toChecksumAddress(my_account._address)
     roleList = identityInfo[3] #Array of roles per Identity
+    
     thePolicies = getPolicies()  ##NEED TO QUERY THE TOTAL POLICIES
-    metadataList = getActivePolicies(thePolicies, roleList) ##MAP roleList with the Total policies.
+    print("HERE", roleList, thePolicies )
+    metadataList = getActivePolicies(thePolicies, roleList, endpointType, address) ##MAP roleList with the Total policies.
+    
    
-    #verifyExist()
     ####Create a session NFT per unique policy Id that has the role only if NO SESSION TOKEN EXIST
-    #mintOTTNFT(ott, address)
-    for m in metadataList:
-        metadata = json.dumps(m._asdict()) #Each item in the metadatalist as JSON string
-        totalSupply = sessionToken_instance.functions.totalSupply().call() #Get the total amount of tokens created
-        check_sum = w3.toChecksumAddress(my_account._address)
-        print("Totalsupply", totalSupply, address)
-        tokenId = totalSupply+1
-        print(tokenId)
-        trans = sessionToken_instance.functions.mint(address,tokenId,endpointType,metadata).buildTransaction({"from": check_sum,"gasPrice": w3.eth.gas_price,"nonce": nonce,"chainId": chainId}) #build RAW transaction supported by BESU
-        updateNonce()
-        signed_txn = w3.eth.account.sign_transaction(trans, my_account.privateKey) #Sign transaction using our own private key
-        print(signed_txn.rawTransaction)
-        txn_hash = w3.eth.send_raw_transaction(signed_txn.rawTransaction) #Send transaction to BESU
+    if metadataList:
+        for m in metadataList:
+            metadata = json.dumps(m._asdict()) #Each item in the metadatalist as JSON string
+            totalSupply = sessionToken_instance.functions.totalSupply().call() #Get the total amount of tokens created
+            tokenExist = verifyExist(address, m)
+            if not tokenExist:
+
+                check_sum = w3.toChecksumAddress(my_account._address)
+                print("Totalsupply", totalSupply, address)
+                tokenId = totalSupply+1
+                print(tokenId)
+                trans = sessionToken_instance.functions.mint(address,tokenId,endpointType,metadata).buildTransaction({"from": check_sum,"gasPrice": w3.eth.gas_price,"nonce": nonce,"chainId": chainId}) #build RAW transaction supported by BESU
+                updateNonce()
+                signed_txn = w3.eth.account.sign_transaction(trans, my_account.privateKey) #Sign transaction using our own private key
+                print(signed_txn.rawTransaction)
+                txn_hash = w3.eth.send_raw_transaction(signed_txn.rawTransaction) #Send transaction to BESU
  
 
 
@@ -490,42 +500,110 @@ def detect(list_a, list_b):
 
 # %% Function that gets the policies which relate to an assigned role
 # TO DO - query the attribute of the active roles returned by the intersection.
-def getActivePolicies(policies, roles):
+def getActivePolicies(policies, roles, type, address):
     activePolicyList = []
-    for p in policies:
-        print("This Policy", p)
-        a = detect(roles,p[1])
-        if a: 
-            activePolicyList.append(Policy(p[0],p[4])) 
-        print("RESULT", a)
-    print("List of policies", activePolicyList)
-    #result = json.dumps(activePolicyList[0]._asdict())##Important for the metadata
-    #print("JSON", result)
+    if policies:
+        if type == "Provider":
+            for p in policies:
+                print("This Policy", p)
+                if address == p[3]: 
+                    expiration = 32496789304
+                    activePolicyList.append(Policy(p[0],p[4],expiration)) 
+            print("List of policies", activePolicyList)
+            #result = json.dumps(activePolicyList[0]._asdict())##Important for the metadata
+            #print("JSON", result)
 
-    return activePolicyList
+        elif roles:
+            for p in policies:
+                print("This Policy", p)
+                a = detect(roles,p[1])
+                if a: 
+                    role =list(a)
+                    roleAttribute =  policyRules_instance.functions.getFullRoleById(role[0]).call()
+                    expiration = timetoEXP(json.loads(roleAttribute[2][0]))
+                    print("ROLE ATTRIBUTES", expiration)
+                    activePolicyList.append(Policy(p[0],p[4],expiration)) 
+                print("RESULT", a)
+            print("List of policies", activePolicyList)
+            #result = json.dumps(activePolicyList[0]._asdict())##Important for the metadata
+            #print("JSON", result)
+
+    return activePolicyList 
+
+    # %% Verify if token exists
+def verifyExist(address, metadata):
+    sessionTokens = sessionToken_instance.functions.getOwnedNfts(address).call()
+    if len(sessionTokens) == 0:
+        return False
+    else:
+        for s in sessionTokens:
+            print("Session Token", s[0])
+            tokenURI = sessionToken_instance.functions.tokenURI(s[0]).call()
+            res = json.loads(tokenURI)
+            print("TOKEN URI",tokenURI)
+            print ("METADATA", metadata, metadata.policyId,res["policyId"])
+            if int(metadata.policyId) == int(res["policyId"]):
+                return True
+
+    return False
+# %% Creates UTC timestamp
+def timetoEXP(timeinsecs):
+    current_datetime = datetime.utcnow()
+    current_timetuple = current_datetime.utctimetuple()
+    current_timestamp = calendar.timegm(current_timetuple)
+    print(current_timestamp)
+    current_timestamp = int(current_timestamp) + int(timeinsecs["exp"])
+
+    print(current_timestamp)
+    return current_timestamp
+
+# %% Verifies expiration time
+def verifyEXP(timeinsecs):
+    current_datetime = datetime.utcnow()
+    current_timetuple = current_datetime.utctimetuple()
+    current_timestamp = calendar.timegm(current_timetuple)
+    print(current_timestamp)
+    if int(current_timestamp) > int(timeinsecs):
+        return True
+    else:
+        return False
+
+# %% Checks validity of session tokens, burn if invalid
+def isTokenValid(tokenId, address):
+    tokenURI = sessionToken_instance.functions.tokenURI(tokenId).call()
+    owner = sessionToken_instance.functions.ownerOf(tokenId).call()
+    res = json.loads(tokenURI)
+    isExpired = verifyEXP(res["exp"])
+    if isExpired:
+        burnSessionToken(owner, int(tokenId))
+        return f"Session Token {tokenId} of {owner} is expired and was burned"
+    else:
+        return f"Session Token {tokenId} of {address} is still valid"
+
+
     
 
-
 # %%
-### NEED TO change to a better version.... Save the ID somewhere (Get it from the createOTT part)###
+
+### Obtains info of the identity in Ziti
 def getIdentityInfoN(identity):
     authResponse = requests.post(f"{apiURL}authenticate?method=password", json=obj, verify=False,)
     jsonResponse = json.loads(authResponse.text)
     #print(authResponse.text)
 
     identityInfo = requests.get(
-    f"{apiURL}identities?filter=(name contains \"{identity}\")",
+    f"{apiURL}identities/{identity}",
     verify=False,
     headers={"zt-session": jsonResponse['data']['token']}
         )
     identityResponse = json.loads(identityInfo.text)
     if len(identityResponse) != 0:
-        authenticators = identityResponse["data"][0]['authenticators']
+        authenticators = identityResponse["data"]['authenticators']
         responseObj = {
-            "id": identityResponse["data"][0]["id"],
-            "name": identityResponse["data"][0]["name"],
-            "createdAt": identityResponse["data"][0]["createdAt"],
-            "updatedAt": identityResponse["data"][0]["updatedAt"],
+            "id": identityResponse["data"]["id"],
+            "name": identityResponse["data"]["name"],
+            "createdAt": identityResponse["data"]["createdAt"],
+            "updatedAt": identityResponse["data"]["updatedAt"],
             "auth": authenticators        
         }
         return responseObj
@@ -533,11 +611,11 @@ def getIdentityInfoN(identity):
         return ''   ##Check a better way to return
 
 
-# %%
-app = Flask(__name__)
-@app.route('/test/', methods=['GET', 'POST'])
-def welcome():
-    return "IBN Zero Trust!"
+
+
+# %% Burn used Enrollment tokens
+
+
 
 def burnOTT(address, tokenId):
     tokensOwned = nftOTT_instance.functions.balanceOf(address).call() #Get the status of the account
@@ -549,6 +627,24 @@ def burnOTT(address, tokenId):
     txn_hash = w3.eth.send_raw_transaction(signed_txn.rawTransaction) #Send transaction to BESU
     #tx_receipt = w3.eth.wait_for_transaction_receipt(txn_hash.hex())  #Gets a receipt from the Blockchain
     #return tx_receipt
+
+    # %% Burn expired Session tokens
+def burnSessionToken(address, tokenId):
+    tokensOwned = sessionToken_instance.functions.balanceOf(address).call() #Get the status of the account
+    check_sum = w3.toChecksumAddress(my_account._address)
+    print("Tokens Owned", tokensOwned)
+    trans = sessionToken_instance.functions.burn(tokenId).buildTransaction({"from": check_sum,"gasPrice": w3.eth.gas_price,"nonce": nonce,"chainId": chainId}) #build RAW transaction supported by BESU
+    updateNonce()
+    signed_txn = w3.eth.account.sign_transaction(trans, my_account.privateKey) #Sign transaction using our own private key
+    txn_hash = w3.eth.send_raw_transaction(signed_txn.rawTransaction) #Send transaction to BESU
+    #tx_receipt = w3.eth.wait_for_transaction_receipt(txn_hash.hex())  #Gets a receipt from the Blockchain
+    #return tx_receipt
+
+# %%
+app = Flask(__name__)
+@app.route('/test/', methods=['GET', 'POST'])
+def welcome():
+    return "IBN Zero Trust!"
 
 def isPerm(address):
     result = contract_instance.functions.accountPermitted(address).call() #Get the status of the account
@@ -590,6 +686,31 @@ def giveMeToken():
         print("An error ocurred: " + str(e))
         return str(e)
 
+@app.route('/verifyToken/', methods=['POST'])
+def verifyToken():
+    res = ''
+    try:
+        requestJSON = request.json
+        print(requestJSON)
+        address = requestJSON["address"]
+        tokenId = requestJSON["tokenId"]
+        print(address)
+        if tokenId == '':
+            sessionTokens = sessionToken_instance.functions.getOwnedNfts(address).call()
+            if len(sessionTokens) != 0:
+                for s in sessionTokens:
+                  print("Session Token", s[0])
+                  res = isTokenValid(s[0], address)
+            
+            return str(res)
+
+        else:
+            res = isTokenValid(tokenId, address)
+            return str(res)
+         
+    except Exception as e:
+        print("An error has ocurred: " + str(e))
+        return str(e)
 @app.route('/verifyEnrolled/', methods=['GET'])
 def verifyEnrolled():
     args = request.args
@@ -597,8 +718,7 @@ def verifyEnrolled():
     tokenId = args.get('tokenId')
     type = args.get('type')
     
-    ##burns the used token
-    burnOTT(identity, int(tokenId))
+
     ##
     identityObject = getIdentityInfoN(identity)
     auth =identityObject["auth"]
@@ -609,10 +729,14 @@ def verifyEnrolled():
     else:
         enrolled = isEnrolled(identity) 
         if enrolled[1]:
+            ##burns the used token
+            burnOTT(identity, int(tokenId))
             return "True"
         else:
             idHash = Web3.keccak(text=identityJSON)    #Hashes the Identity for storing in the blockchain
             updateAccount(identity, str(idHash), True, type)        #Updates the status of the identity
+            ##burns the used token
+            burnOTT(identity, int(tokenId))
             return "True"
             
         
@@ -706,7 +830,6 @@ if __name__ == '__main__':
     w3 = Web3(HTTPProvider(web3Prov)) #If access to our Local lockchain
     ctx = ssl.create_default_context() #secure ssl context for email
     
-    print("PERMISSIONED CONTRACT", permissionedAddress, chainId)
     
     w3.middleware_onion.inject(geth_poa_middleware, layer=0) #For compatibility with POA consensus chains
     nonce = 0 #Need to find a better way for nonce tracking
@@ -715,7 +838,7 @@ if __name__ == '__main__':
     sessionToken_instance = w3.eth.contract(address = sessionNFT, abi = abiSessionNFT)
     policyRules_instance = w3.eth.contract(address = policyRules, abi = abiPolicy)
     verify_instance = w3.eth.contract(address = employeeRepo, abi = abiEmpRep) #Creates a contract instance for the employee Repo 
-    Policy = namedtuple("Policy",["policyId","hash"]) #Named Tuple for a policy
+    Policy = namedtuple("Policy",["policyId","hash", "exp"]) #Named Tuple for a policy    #print(dir(nftOTT_instance.functions.mint))
     #print(dir(nftOTT_instance.functions.mint))
     #print(dir(contract_instance.functions))
 
