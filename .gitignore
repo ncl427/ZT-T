@@ -1,5 +1,5 @@
 # exclude Keys
-Keys/*
+Keys/
 
 # exception to the rule
 !Keys/.gitkeep 
