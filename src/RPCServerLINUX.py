@@ -604,10 +604,11 @@ def getIdentityInfoN(identity):
             "name": identityResponse["data"]["name"],
             "createdAt": identityResponse["data"]["createdAt"],
             "updatedAt": identityResponse["data"]["updatedAt"],
-            "auth": authenticators        
+            "auth": authenticators,
+            "fing": fingerprint  
         }
-        ##return responseObj ##We only require the certificate fingerprint
-        return fingerprint
+        return responseObj ##We only require the certificate fingerprint
+        ##return fingerprint
     else:
         return ''   ##Check a better way to return
 
@@ -725,6 +726,7 @@ def verifyEnrolled():
     ##
     identityObject = getIdentityInfoN(identity)
     auth =identityObject["auth"]
+    ##auth = identityObject
     identityJSON = json.dumps(identityObject)
     print("JSON :", auth)
     if len(auth) == 0:
@@ -736,7 +738,7 @@ def verifyEnrolled():
             burnOTT(identity, int(tokenId))
             return "True"
         else:
-            idHash = Web3.keccak(text=identityJSON)    #Hashes the Identity for storing in the blockchain
+            idHash = Web3.keccak(text=identityObject["fing"])    #Hashes the Identity for storing in the blockchain
             hexHash = idHash.hex()
             updateAccount(identity, hexHash, True, type)        #Updates the status of the identity
             ##burns the used token
