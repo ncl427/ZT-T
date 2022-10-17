@@ -120,25 +120,29 @@ def safePasswordInput( my_encKey, passw, num_retries):
 
 def setApproval(address):
     tokensOwned = nftOTT_instance.functions.balanceOf(my_account._address).call() #Get the status of the account
+    isApproved = nftOTT_instance.functions.isApprovedForAll(my_account._address, address).call()
     check_sum = w3.toChecksumAddress(my_account._address)
     print("Tokens Owned", tokensOwned)
-    trans = nftOTT_instance.functions.setApprovalForAll(address, True).buildTransaction({"from": check_sum,"gasPrice": w3.eth.gas_price,"nonce": w3.eth.get_transaction_count(check_sum),"chainId": 2022}) #build RAW transaction supported by BESU
-    signed_txn = w3.eth.account.sign_transaction(trans, my_account.privateKey) #Sign transaction using our own private key
-    txn_hash = w3.eth.send_raw_transaction(signed_txn.rawTransaction) #Send transaction to BESU
-    tx_receipt = w3.eth.wait_for_transaction_receipt(txn_hash.hex())  #Gets a receipt from the Blockchain
-    return tx_receipt
+    if not isApproved:
+        trans = nftOTT_instance.functions.setApprovalForAll(address, True).buildTransaction({"from": check_sum,"gasPrice": w3.eth.gas_price,"nonce": w3.eth.get_transaction_count(check_sum),"chainId": 2022}) #build RAW transaction supported by BESU
+        signed_txn = w3.eth.account.sign_transaction(trans, my_account.privateKey) #Sign transaction using our own private key
+        txn_hash = w3.eth.send_raw_transaction(signed_txn.rawTransaction) #Send transaction to BESU
+        tx_receipt = w3.eth.wait_for_transaction_receipt(txn_hash.hex())  #Gets a receipt from the Blockchain
+        ##return tx_receipt
 
 # %%Sets approval of Session NFTs
 
 def setSessionApproval(address):
     tokensOwned = sessionToken_instance.functions.balanceOf(my_account._address).call() #Get the status of the account
+    isApproved = sessionToken_instance.functions.isApprovedForAll(my_account._address, address).call()
     check_sum = w3.toChecksumAddress(my_account._address)
     print("Tokens Owned", tokensOwned)
-    trans = sessionToken_instance.functions.setApprovalForAll(address, True).buildTransaction({"from": check_sum,"gasPrice": w3.eth.gas_price,"nonce": w3.eth.get_transaction_count(check_sum),"chainId": 2022}) #build RAW transaction supported by BESU
-    signed_txn = w3.eth.account.sign_transaction(trans, my_account.privateKey) #Sign transaction using our own private key
-    txn_hash = w3.eth.send_raw_transaction(signed_txn.rawTransaction) #Send transaction to BESU
-    #tx_receipt = w3.eth.wait_for_transaction_receipt(txn_hash.hex())  #Gets a receipt from the Blockchain
-    #return tx_receipt
+    if not isApproved:
+        trans = sessionToken_instance.functions.setApprovalForAll(address, True).buildTransaction({"from": check_sum,"gasPrice": w3.eth.gas_price,"nonce": w3.eth.get_transaction_count(check_sum),"chainId": 2022}) #build RAW transaction supported by BESU
+        signed_txn = w3.eth.account.sign_transaction(trans, my_account.privateKey) #Sign transaction using our own private key
+        txn_hash = w3.eth.send_raw_transaction(signed_txn.rawTransaction) #Send transaction to BESU
+        #tx_receipt = w3.eth.wait_for_transaction_receipt(txn_hash.hex())  #Gets a receipt from the Blockchain
+        #return tx_receipt
 
 
 # In[5]:
