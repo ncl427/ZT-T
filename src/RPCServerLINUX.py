@@ -34,6 +34,8 @@ import subprocess
 import re
 import time
 import calendar
+import jwt
+
 
 ### FOR OUR BESU CHAIN ####
 ##Uncomment if neeeded###
@@ -395,7 +397,10 @@ def addPermission(address):
 # %%
 def mintOTTNFT(address, endpointType, signature):
     check_sum = w3.toChecksumAddress(my_account._address)
-    ott = str(getOTT(address, endpointType))  
+    ott = str(getOTT(address, endpointType))
+    decodedOTT = jwt.decode(ott, options={"verify_signature": False})   #We need to cecrypt first
+    expiration = str(decodedOTT["exp"])
+
     if signature == '':
         pubKeyAddress = getPubKeyByAddress(address)
     else:
@@ -407,7 +412,7 @@ def mintOTTNFT(address, endpointType, signature):
     print("Totalsupply", totalSupply, address, ott)
     tokenId = totalSupply+1
     print(tokenId)
-    trans = nftOTT_instance.functions.mint(address,tokenId,encryptedOTT).buildTransaction({"from": check_sum,"gasPrice": w3.eth.gas_price,"nonce": nonce,"chainId": chainId}) #build RAW transaction supported by BESU
+    trans = nftOTT_instance.functions.mint(address,tokenId,expiration,encryptedOTT).buildTransaction({"from": check_sum,"gasPrice": w3.eth.gas_price,"nonce": nonce,"chainId": chainId}) #build RAW transaction supported by BESU
     updateNonce()
     signed_txn = w3.eth.account.sign_transaction(trans, my_account.privateKey) #Sign transaction using our own private key
     print(signed_txn.rawTransaction)
@@ -563,7 +568,7 @@ def verifyEXP(timeinsecs):
     current_datetime = datetime.utcnow()
     current_timetuple = current_datetime.utctimetuple()
     current_timestamp = calendar.timegm(current_timetuple)
-    print(current_timestamp)
+    print("THE TIME IS: ",current_timestamp, timeinsecs)
     if int(current_timestamp) > int(timeinsecs):
         return True
     else:
@@ -583,6 +588,16 @@ def isTokenValid(tokenId, address):
         return f"Session Token {tokenId} of {owner} is expired and was burned"
     else:
         return f"Session Token {tokenId} of {address} is still valid"
+
+# %% Checks validity of OTtokens, burn if invalid
+def isOTTokenValid(ott, address):
+    owner = nftOTT_instance.functions.ownerOf(ott[0]).call()
+    isExpired = verifyEXP(ott[1])
+    if isExpired:
+        burnOTT(owner, ott[0])
+        print(f"OTT {ott[0]} of {owner} is expired and was burned")
+    else:
+        print(f"OTT {ott[0]} of {address} is still valid")
 
 
 
@@ -703,10 +718,16 @@ def verifyToken():
         print(address)
         if tokenId == '':
             sessionTokens = sessionToken_instance.functions.getOwnedNfts(address).call()
+            otTokens = nftOTT_instance.functions.getOwnedNfts(address).call()
             if len(sessionTokens) != 0:
                 for s in sessionTokens:
                   print("Session Token", s[0])
                   res = isTokenValid(s[0], address)
+            
+            if len(otTokens) != 0:
+                for o in otTokens:
+                    print("OTToken", o[0])
+                    isOTTokenValid(o, address)
             
             return str(res)
 

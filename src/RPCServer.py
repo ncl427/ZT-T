@@ -36,6 +36,7 @@ import subprocess
 import re
 import time
 import calendar
+import jwt
 
 ### FOR OUR BESU CHAIN ####
 ##Uncomment if neeeded###
