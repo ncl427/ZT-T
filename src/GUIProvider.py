@@ -546,7 +546,21 @@ def giveMeToken():
     )
     print(response.text)
     
+# %% For verifying token when connection starts
 
+def verifyToken():
+    
+    jsonobj = {
+    "address": my_account.address,
+    "tokenId": ''
+     }
+
+    response = requests.post(
+    rpcURL+"/verifyToken/",
+    verify=False,
+    json = jsonobj
+    )
+    print(response.text)
 
 # In[25]:
 

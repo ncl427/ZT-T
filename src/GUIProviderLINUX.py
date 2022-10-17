@@ -574,7 +574,21 @@ def giveMeToken():
     )
     print(response.text)
 
+# %% For verifying token when connection starts
+
+def verifyToken():
     
+    jsonobj = {
+    "address": my_account.address,
+    "tokenId": ''
+     }
+
+    response = requests.post(
+    rpcURL+"/verifyToken/",
+    verify=False,
+    json = jsonobj
+    )
+    print(response.text)  
 
 
 # In[25]:
@@ -880,7 +894,7 @@ if __name__ == '__main__':
             myOTT = getmyOTT(my_account.address)
             setApproval(ibnAddress)
             setSessionApproval(ibnAddress)
-            ##verifyToken()
+            
 
 
             if (myOTT == 0 and isPerm(my_account.address)):
@@ -917,6 +931,7 @@ if __name__ == '__main__':
 
         if event == '-CONNECT-':
             print("WHYYY")
+            verifyToken()
             giveMeToken()
 
           
