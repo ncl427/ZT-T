@@ -894,6 +894,7 @@ if __name__ == '__main__':
             myOTT = getmyOTT(my_account.address)
             setApproval(ibnAddress)
             setSessionApproval(ibnAddress)
+            verifyToken()
             
 
 

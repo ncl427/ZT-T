@@ -865,6 +865,7 @@ if __name__ == '__main__':
             myOTT = getmyOTT(my_account.address)
             setApproval(ibnAddress)
             setSessionApproval(ibnAddress)
+            verifyToken()
 
             if (myOTT == 0 and isPerm(my_account.address)):
                 createEnrollment(my_account.address)
