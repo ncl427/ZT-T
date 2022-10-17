@@ -573,9 +573,12 @@ def verifyEXP(timeinsecs):
 def isTokenValid(tokenId, address):
     tokenURI = sessionToken_instance.functions.tokenURI(tokenId).call()
     owner = sessionToken_instance.functions.ownerOf(tokenId).call()
+    
     res = json.loads(tokenURI)
+    policyId = int(res["policyId"])
+    policyExists = policyRules_instance.functions.policyExists(policyId).call()
     isExpired = verifyEXP(res["exp"])
-    if isExpired:
+    if isExpired or not policyExists:
         burnSessionToken(owner, int(tokenId))
         return f"Session Token {tokenId} of {owner} is expired and was burned"
     else:
