@@ -891,10 +891,10 @@ if __name__ == '__main__':
                 
 
         if event == '-ENROLL-':
+            verifyToken()
             myOTT = getmyOTT(my_account.address)
             setApproval(ibnAddress)
             setSessionApproval(ibnAddress)
-            verifyToken()
             
 
 
