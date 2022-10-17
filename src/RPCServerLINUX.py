@@ -469,8 +469,14 @@ def updateAccount(address, accountHash, enrollment, idType):
 
 # %%
 def updateNonce():
+    check_sum = w3.toChecksumAddress(my_account._address)
+    thisNonce = w3.eth.get_transaction_count(check_sum)
     global nonce
-    nonce = nonce + 1
+
+    if thisNonce > nonce:
+        nonce = thisNonce
+    else:
+        nonce = nonce + 1
     print("Nonce", nonce)
 
 
