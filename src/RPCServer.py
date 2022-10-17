@@ -394,6 +394,8 @@ def addPermission(address):
 def mintOTTNFT(address, endpointType, signature):
     check_sum = w3.toChecksumAddress(my_account._address)
     ott = str(getOTT(address, endpointType))
+    decodedOTT = jwt.decode(ott, options={"verify_signature": False})   #We need to cecrypt first
+    expiration = str(decodedOTT["exp"])
     if signature == '':
         pubKeyAddress = getPubKeyByAddress(address)
     else:
@@ -405,7 +407,7 @@ def mintOTTNFT(address, endpointType, signature):
     print("Totalsupply", totalSupply, address, ott)
     tokenId = totalSupply+1
     print(tokenId)
-    trans = nftOTT_instance.functions.mint(address,tokenId,encryptedOTT).buildTransaction({"from": check_sum,"gasPrice": w3.eth.gas_price,"nonce": nonce,"chainId": chainId}) #build RAW transaction supported by BESU
+    trans = nftOTT_instance.functions.mint(address,tokenId,expiration,encryptedOTT).buildTransaction({"from": check_sum,"gasPrice": w3.eth.gas_price,"nonce": nonce,"chainId": chainId}) #build RAW transaction supported by BESU
     updateNonce()
     signed_txn = w3.eth.account.sign_transaction(trans, my_account.privateKey) #Sign transaction using our own private key
     print(signed_txn.rawTransaction)
@@ -463,7 +465,16 @@ def updateAccount(address, accountHash, enrollment, idType):
 # %%
 def updateNonce():
     global nonce
-    nonce = nonce + 1
+    check_sum = w3.toChecksumAddress(my_account._address)
+    thisNonce = w3.eth.get_transaction_count(check_sum)
+   
+    
+    print("Nonce is!!", thisNonce, nonce)
+
+    if thisNonce > nonce:
+        nonce = thisNonce
+    else:
+        nonce = nonce + 1
     print("Nonce", nonce)
 
 
@@ -563,7 +574,7 @@ def verifyEXP(timeinsecs):
     current_datetime = datetime.utcnow()
     current_timetuple = current_datetime.utctimetuple()
     current_timestamp = calendar.timegm(current_timetuple)
-    print(current_timestamp)
+    print("THE TIME IS: ",current_timestamp, timeinsecs)
     if int(current_timestamp) > int(timeinsecs):
         return True
     else:
@@ -573,13 +584,26 @@ def verifyEXP(timeinsecs):
 def isTokenValid(tokenId, address):
     tokenURI = sessionToken_instance.functions.tokenURI(tokenId).call()
     owner = sessionToken_instance.functions.ownerOf(tokenId).call()
+    
     res = json.loads(tokenURI)
+    policyId = int(res["policyId"])
+    policyExists = policyRules_instance.functions.policyExists(policyId).call()
     isExpired = verifyEXP(res["exp"])
-    if isExpired:
+    if isExpired or not policyExists:
         burnSessionToken(owner, int(tokenId))
         return f"Session Token {tokenId} of {owner} is expired and was burned"
     else:
         return f"Session Token {tokenId} of {address} is still valid"
+
+# %% Checks validity of OTtokens, burn if invalid
+def isOTTokenValid(ott, address):
+    owner = nftOTT_instance.functions.ownerOf(ott[0]).call()
+    isExpired = verifyEXP(ott[1])
+    if isExpired:
+        burnOTT(owner, ott[0])
+        print(f"OTT {ott[0]} of {owner} is expired and was burned")
+    else:
+        print(f"OTT {ott[0]} of {address} is still valid")
 
 
     
@@ -600,14 +624,17 @@ def getIdentityInfoN(identity):
     identityResponse = json.loads(identityInfo.text)
     if len(identityResponse) != 0:
         authenticators = identityResponse["data"]['authenticators']
+        fingerprint = identityResponse["data"]["authenticators"]["cert"]["fingerprint"]
         responseObj = {
             "id": identityResponse["data"]["id"],
             "name": identityResponse["data"]["name"],
             "createdAt": identityResponse["data"]["createdAt"],
             "updatedAt": identityResponse["data"]["updatedAt"],
-            "auth": authenticators        
+            "auth": authenticators,
+            "fing": fingerprint  
         }
-        return responseObj
+        return responseObj ##We only require the certificate fingerprint
+        ##return fingerprint
     else:
         return ''   ##Check a better way to return
 
@@ -698,10 +725,16 @@ def verifyToken():
         print(address)
         if tokenId == '':
             sessionTokens = sessionToken_instance.functions.getOwnedNfts(address).call()
+            otTokens = nftOTT_instance.functions.getOwnedNfts(address).call()
             if len(sessionTokens) != 0:
                 for s in sessionTokens:
                   print("Session Token", s[0])
                   res = isTokenValid(s[0], address)
+            if len(otTokens) != 0:
+                for o in otTokens:
+                    print("OTToken", o[0])
+                    isOTTokenValid(o, address)
+            
             
             return str(res)
 
@@ -734,8 +767,9 @@ def verifyEnrolled():
             burnOTT(identity, int(tokenId))
             return "True"
         else:
-            idHash = Web3.keccak(text=identityJSON)    #Hashes the Identity for storing in the blockchain
-            updateAccount(identity, str(idHash), True, type)        #Updates the status of the identity
+            idHash = Web3.keccak(text=identityObject["fing"])    #Hashes the Identity for storing in the blockchain
+            hexHash = idHash.hex()
+            updateAccount(identity, hexHash, True, type)        #Updates the status of the identity
             ##burns the used token
             burnOTT(identity, int(tokenId))
             return "True"
