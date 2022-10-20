@@ -394,6 +394,7 @@ def sendEth(address):
     tx = {'from': check_sum,
           'to': address,
           'value': w3.toWei(1, 'ether'),
+          'gas': 2000000,
           'gasPrice': w3.eth.gas_price,
           'nonce': nonce,
           'chainId': chainId} #build RAW transaction supported by BESU
