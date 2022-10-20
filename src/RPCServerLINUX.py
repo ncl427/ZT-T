@@ -392,6 +392,23 @@ def addPermission(address):
     txn_hash = w3.eth.send_raw_transaction(signed_txn.rawTransaction) #Send transaction to BESU
     #tx_receipt = w3.eth.wait_for_transaction_receipt(txn_hash.hex())
     
+    # %%
+def sendEth(address):
+    check_sum = w3.toChecksumAddress(my_account._address)
+    tx = {'from': check_sum,
+          'to': address,
+          'value': w3.toWei(1, 'ether'),
+          'gasPrice': w3.eth.gas_price,
+          'nonce': nonce,
+          'chainId': chainId} #build RAW transaction supported by BESU
+    #del tx['maxPriorityFeePerGas']
+    print(tx)
+    updateNonce()
+    #signsendTransaction(tx, my_account)
+    signed_txn = w3.eth.account.sign_transaction(tx, my_account.privateKey) #Sign transaction using our own private key
+    print(signed_txn.rawTransaction)
+    txn_hash = w3.eth.send_raw_transaction(signed_txn.rawTransaction) #Send transaction to BESU
+    #tx_receipt = w3.eth.wait_for_transaction_receipt(txn_hash.hex())
 
 
 # %%
@@ -829,6 +846,8 @@ def createIdentity():
             perm = isPerm(address) #Get the status of the account
             if not perm:
                     addPermission(address)
+                    sendEth(address) ##Before changing the Blockchain to no WEI
+
                     perm = True
             if perm:
                     print("TEEEEEEEEEEEEEEEEEEEEEST")
