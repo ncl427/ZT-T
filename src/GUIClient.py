@@ -277,7 +277,7 @@ def eventFilter():
 def enroll(tokenId):
     if tokenId != 0:
         tokenURI = decryptOTT(tokenId) #Get the OTT information
-        with open(r"C:\Windows\System32\config\systemprofile\AppData\Roaming\NetFoundry\myId.json", 'wb') as id_file:
+        with open(zitiTunnel, 'wb') as id_file:
             id_json = ztenroll(tokenURI)
             id_file.write(bytes(id_json, 'utf-8'))
         print("ENROLLMENT SUCCESS")
