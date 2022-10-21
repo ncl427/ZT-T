@@ -281,7 +281,7 @@ def eventFilter():
 def enroll(tokenId):
     if tokenId != 0:
         tokenURI = decryptOTT(tokenId) #Get the OTT information
-        with open(r"/home/ncl/VideoServer/myId.json", 'wb') as id_file:
+        with open(idFolder+'/myId.json', 'wb') as id_file:
             id_json = ztenroll(tokenURI)
             id_file.write(bytes(id_json, 'utf-8'))
         print("ENROLLMENT SUCCESS")
@@ -371,8 +371,8 @@ def signMessage(message, privKey):
     cmd = """node -e 'require(\"./signMe.js\").signMessage(\"{}\",\"{}\")'"""
 
     #cmd = 'node -e \"require(\'./signMe.js\').signMessage(\'{}\',\'{}\')\"' #If fail, check quotes
-    #pattern = r'\\n(.*)\\n'
-    pattern = r'b\'(.*)\\n'
+    pattern = r'\\n(.*)\\n'
+    #pattern = r'b\'(.*)\\n'
 
     
  
@@ -393,8 +393,8 @@ def signMessage(message, privKey):
 def encryptMessage(message, publicKey):
     cmd = """node -e 'require(\"./encrypt.js\").encrypt(\"{}\",\"{}\")'"""
     #cmd = 'node -e \"require(\'./encrypt.js\').encrypt(\'{}\',\'{}\')\"' #If fail, check quotes
-    #pattern = r'\\n(.*)\\n'
-    pattern = r'b\'(.*)\\n'
+    pattern = r'\\n(.*)\\n'
+    #pattern = r'b\'(.*)\\n'
     
  
     #privKey = w3.toHex(privKey)
@@ -416,8 +416,8 @@ def encryptMessage(message, publicKey):
 def getPubKeyfromSig(signedmessage, message):
     cmd = """node -e 'require(\"./recoverSig.js\").recoverPubKey(\"{}\",\"{}\")'"""
     #cmd = 'node -e \"require(\'./recoverSig.js\').recoverPubKey(\'{}\',\'{}\')\"' #If fail, check quotes 
-    #pattern = r'\\n(.*)\\n'
-    pattern = r'b\'(.*)\\n'
+    pattern = r'\\n(.*)\\n'
+    #pattern = r'b\'(.*)\\n'
 
 
     output = subprocess.check_output(cmd.format(signedmessage, message), shell=True)
@@ -434,7 +434,8 @@ def getPubKeyfromSig(signedmessage, message):
 def decryptMessage(message, privKey):
     cmd = """node -e 'require(\"./decrypt.js\").decrypt(\"{}\",\"{}\")'"""
     #cmd = 'node -e \"require(\'./decrypt.js\').decrypt(\'{}\',\'{}\')\"' #If fail, check quotes
-    pattern = r'b\'(.*)\\n'
+    #pattern = r'b\'(.*)\\n'
+    pattern = r'\\n(.*)\\n'
     
  
     privKey = w3.toHex(privKey)
