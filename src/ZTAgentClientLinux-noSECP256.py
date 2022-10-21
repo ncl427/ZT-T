@@ -592,7 +592,7 @@ def launchTunnel():
     #process = subprocess.Popen(["./ziti-edge-tunnel", "run", "-i", idFolder +"/myId.json" ], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     #stdout, stderr = process.communicate()
 
-    Popen(["/usr/bin/git", "commit", "-m", "Fixes a bug."])
+    #Popen(["/usr/bin/git", "commit", "-m", "Fixes a bug."])
     cmd = "sudo ./ziti-edge-tunnel run -i" + idFolder +"/myId.json"
 
 
