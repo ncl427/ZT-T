@@ -203,7 +203,7 @@ def createIdentity(secretMessage):
     jsonobj = {
         "signature": signedMessage,
         "address": my_account.address,
-        "type": "Service"
+        "type": "User"
     }
 
 
@@ -474,7 +474,7 @@ def getIBNPubKey():
 #For verification check of Enrollment to IBN
 def notifyEnrollment(tokenId):
     response = requests.get(
-    rpcURL+"/verifyEnrolled?name=" +my_account.address+"&tokenId=" +str(tokenId)+"&type=" +str("Provider"),    verify=False
+    rpcURL+"/verifyEnrolled?name=" +my_account.address+"&tokenId=" +str(tokenId)+"&type=" +str("Client"),    verify=False
     )
     print(response.text)
 
@@ -488,7 +488,7 @@ def createEnrollment(address):
 
     jsonobj = {
     "address": address,
-    "type": "Service",
+    "type": "User",
     "signature": signedMessage
      }
     print(jsonobj)
@@ -568,7 +568,40 @@ def verifyToken():
     )
     print(response.text)  
 
+# %% Launch Ziti Tunnel on Linux
 
+def launchTunnel():
+    #try:
+    #    cmd = ["sudo'", "ziti-edge-tunnel", "run", "-i", idFolder +"/myId.json" ]
+    #    process = subprocess.Popen(
+    #        cmd,
+    #        stdout=subprocess.PIPE,
+    #        stderr=subprocess.PIPE,
+    #        universal_newlines=True,
+    #        bufsize=1,
+    #        text=True
+    #    )
+    #    while True:
+    #        print(process.stdout.readline().strip())
+
+    #except KeyboardInterrupt:
+    #    print('stopping process...')
+    #    process.kill()
+    
+
+    #process = subprocess.Popen(["./ziti-edge-tunnel", "run", "-i", idFolder +"/myId.json" ], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    #stdout, stderr = process.communicate()
+
+    Popen(["/usr/bin/git", "commit", "-m", "Fixes a bug."])
+    cmd = "sudo ./ziti-edge-tunnel run -i" + idFolder +"/myId.json"
+
+
+    print(cmd)
+
+    output = subprocess.check_output(cmd, shell=True)
+    
+    print(output)
+  
 # In[25]:
 
 
@@ -912,6 +945,7 @@ if __name__ == '__main__':
             print("WHYYY")
             verifyToken()
             giveMeToken()
+            launchTunnel()
 
           
             

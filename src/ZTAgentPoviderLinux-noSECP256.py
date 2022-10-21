@@ -371,8 +371,8 @@ def signMessage(message, privKey):
     cmd = """node -e 'require(\"./signMe.js\").signMessage(\"{}\",\"{}\")'"""
 
     #cmd = 'node -e \"require(\'./signMe.js\').signMessage(\'{}\',\'{}\')\"' #If fail, check quotes
-    #pattern = r'\\n(.*)\\n'
-    pattern = r'b\'(.*)\\n'
+    pattern = r'\\n(.*)\\n'
+    #pattern = r'b\'(.*)\\n'
 
     
  
@@ -393,8 +393,8 @@ def signMessage(message, privKey):
 def encryptMessage(message, publicKey):
     cmd = """node -e 'require(\"./encrypt.js\").encrypt(\"{}\",\"{}\")'"""
     #cmd = 'node -e \"require(\'./encrypt.js\').encrypt(\'{}\',\'{}\')\"' #If fail, check quotes
-    #pattern = r'\\n(.*)\\n'
-    pattern = r'b\'(.*)\\n'
+    pattern = r'\\n(.*)\\n'
+    #pattern = r'b\'(.*)\\n'
     
  
     #privKey = w3.toHex(privKey)
@@ -416,8 +416,8 @@ def encryptMessage(message, publicKey):
 def getPubKeyfromSig(signedmessage, message):
     cmd = """node -e 'require(\"./recoverSig.js\").recoverPubKey(\"{}\",\"{}\")'"""
     #cmd = 'node -e \"require(\'./recoverSig.js\').recoverPubKey(\'{}\',\'{}\')\"' #If fail, check quotes 
-    #pattern = r'\\n(.*)\\n'
-    pattern = r'b\'(.*)\\n'
+    pattern = r'\\n(.*)\\n'
+    #pattern = r'b\'(.*)\\n'
 
 
     output = subprocess.check_output(cmd.format(signedmessage, message), shell=True)
@@ -434,7 +434,8 @@ def getPubKeyfromSig(signedmessage, message):
 def decryptMessage(message, privKey):
     cmd = """node -e 'require(\"./decrypt.js\").decrypt(\"{}\",\"{}\")'"""
     #cmd = 'node -e \"require(\'./decrypt.js\').decrypt(\'{}\',\'{}\')\"' #If fail, check quotes
-    pattern = r'b\'(.*)\\n'
+    #pattern = r'b\'(.*)\\n'
+    pattern = r'\\n(.*)\\n'
     
  
     privKey = w3.toHex(privKey)
@@ -646,7 +647,7 @@ def collapse(layout, key, visible):
 
 def connecButtons():
     if isEnrolled:
-        window['-ISCONNECTED-'].update("Not Connected", text_color='red')
+        window['-ISCONNECTED-'].update("", text_color='red')
         window['-SEC2-'].update(visible=False) #Pinned Column for button format
         window['-SEC1-'].update(visible=True) #Pinned Column for button format
 
@@ -685,7 +686,7 @@ if __name__ == '__main__':
               [sg.Input(key='-IN-', password_char='*')],
               [sg.Button('Enter',  key='-ENTER-') ]]
     
-    connect = [[sg.Button('CONNECT', key='-CONNECT-', visible = True)]]
+    connect = [[sg.Button('REQUEST SESSION TOKENS', key='-CONNECT-', visible = True)]]
     
     discon  = [[sg.Button('DISCONNECT', key='-DISCONNECT-', visible = True)]]
     
