@@ -24,12 +24,11 @@ from web3 import Web3, HTTPProvider, EthereumTesterProvider
 from web3.middleware import geth_poa_middleware
 from os.path import exists
 from eth_account.messages import encode_defunct
-from config.definitions import ROOT_DIR
+from config.definitions import ROOT_DIR_LINUX
 from threading import Thread
 
 from dotenv import load_dotenv
 from os import getenv
-
 
 import json
 import requests
@@ -40,7 +39,7 @@ import subprocess
 import PySimpleGUI as sg
 import re
 import jwt
-import win32serviceutil
+#import win32serviceutil
 import psutil
 
 
@@ -48,6 +47,8 @@ import psutil
 ### FOR OUR BESU CHAIN ####
 ##Uncomment if neeeded###
 load_dotenv()
+
+
 nftOTT = os.getenv('OTTADDRESS') #Address of the NFT contract
 sessionNFT = os.getenv('SESSIONTOKENADDRESS') #Address of the session token contract
 
@@ -57,7 +58,6 @@ web3Prov = os.getenv('WEB3PROVIDER')
 rpcURL = os.getenv('IBNBACKEND')
 
 ibnAddress = os.getenv('IBNADDRESS')
-zitiTunnel = os.getenv('EDGETUNNEL')
 
 ### FOR MY LOCAL TEST ###
 ### Uncomment if needed###
@@ -74,12 +74,12 @@ decodedOTT = None
 myEmail = None
 isEnrolled = False
 
-abiFolder = os.path.join(ROOT_DIR, 'ABI')
-keyFolder = os.path.join(ROOT_DIR, 'Keys')
-srcFolder = os.path.join(ROOT_DIR, 'src')
-idFolder =  os.path.join(ROOT_DIR, 'identity')
+abiFolder = os.path.join(ROOT_DIR_LINUX, 'ABI')
+keyFolder = os.path.join(ROOT_DIR_LINUX, 'Keys')
+srcFolder = os.path.join(ROOT_DIR_LINUX, 'src')
+idFolder =  os.path.join(ROOT_DIR_LINUX, 'identity')
 
-print(ROOT_DIR)
+print(ROOT_DIR_LINUX)
 
 with open(abiFolder+"/"+"ottNFT.json") as file:
     abiNFT = json.load(file)
@@ -92,6 +92,13 @@ with open(abiFolder+"/"+"sessionNFT.json") as file:
     
 ##os.environ["ZITI_IDENTITIES"] = idFolder+"/"+"myId.json"
 os.environ["ZITI_IDENTITIES"] = ""
+    
+##os.environ["ZITI_IDENTITIES"] = idFolder+"/"+"myId.json"
+#os.environ["ZITI_IDENTITIES"] = ""
+
+
+
+
 from openziti import enroll as ztenroll ##Environment variable is acting weird.
 
 
@@ -118,12 +125,12 @@ def safePasswordInput( my_encKey, passw, num_retries):
 
 # %%Sets approval of OTT NFTs
 
+
 def setApproval(address):
     tokensOwned = nftOTT_instance.functions.balanceOf(my_account._address).call() #Get the status of the account
     isApproved = nftOTT_instance.functions.isApprovedForAll(my_account._address, address).call()
-    print("OTTokens Owned", tokensOwned, isApproved)
     check_sum = w3.toChecksumAddress(my_account._address)
-    
+    print("Tokens Owned", tokensOwned)
     if not isApproved:
         trans = nftOTT_instance.functions.setApprovalForAll(address, True).buildTransaction({"from": check_sum,"gasPrice": w3.eth.gas_price,"nonce": w3.eth.get_transaction_count(check_sum),"chainId": 2022}) #build RAW transaction supported by BESU
         signed_txn = w3.eth.account.sign_transaction(trans, my_account.privateKey) #Sign transaction using our own private key
@@ -136,17 +143,14 @@ def setApproval(address):
 def setSessionApproval(address):
     tokensOwned = sessionToken_instance.functions.balanceOf(my_account._address).call() #Get the status of the account
     isApproved = sessionToken_instance.functions.isApprovedForAll(my_account._address, address).call()
-    print("Session Tokens Owned", tokensOwned, isApproved)
     check_sum = w3.toChecksumAddress(my_account._address)
-    
+    print("Tokens Owned", tokensOwned)
     if not isApproved:
         trans = sessionToken_instance.functions.setApprovalForAll(address, True).buildTransaction({"from": check_sum,"gasPrice": w3.eth.gas_price,"nonce": w3.eth.get_transaction_count(check_sum),"chainId": 2022}) #build RAW transaction supported by BESU
         signed_txn = w3.eth.account.sign_transaction(trans, my_account.privateKey) #Sign transaction using our own private key
         txn_hash = w3.eth.send_raw_transaction(signed_txn.rawTransaction) #Send transaction to BESU
         #tx_receipt = w3.eth.wait_for_transaction_receipt(txn_hash.hex())  #Gets a receipt from the Blockchain
         #return tx_receipt
-
-
 # In[5]:
 
 
@@ -199,7 +203,7 @@ def createIdentity(secretMessage):
     jsonobj = {
         "signature": signedMessage,
         "address": my_account.address,
-        "type": "User"
+        "type": "Service"
     }
 
 
@@ -277,7 +281,7 @@ def eventFilter():
 def enroll(tokenId):
     if tokenId != 0:
         tokenURI = decryptOTT(tokenId) #Get the OTT information
-        with open(zitiTunnel, 'wb') as id_file:
+        with open(idFolder+'/myId.json', 'wb') as id_file:
             id_json = ztenroll(tokenURI)
             id_file.write(bytes(id_json, 'utf-8'))
         print("ENROLLMENT SUCCESS")
@@ -364,8 +368,12 @@ def verifyUser(empId, email, pubKeyIBN):
 def signMessage(message, privKey):
     singlequote ="'"
     doublequote = '"'
-    cmd = 'node -e \"require(\'./signMe.js\').signMessage(\'{}\',\'{}\')\"' #If fail, check quotes
-    pattern = r'\\n(.*)\\n'
+    cmd = """node -e 'require(\"./signMe.js\").signMessage(\"{}\",\"{}\")'"""
+
+    #cmd = 'node -e \"require(\'./signMe.js\').signMessage(\'{}\',\'{}\')\"' #If fail, check quotes
+    #pattern = r'\\n(.*)\\n'
+    pattern = r'b\'(.*)\\n'
+
     
  
     privKey = w3.toHex(privKey)
@@ -374,7 +382,6 @@ def signMessage(message, privKey):
     
     #signed_message = w3.eth.sign(privKey,text=message)
     print(cmd.format(message,privKey))
-    print(str(output))
     substring = re.search(pattern, str(output)).group(1)
     print(substring)
     return substring
@@ -384,9 +391,10 @@ def signMessage(message, privKey):
 
 
 def encryptMessage(message, publicKey):
-    #cmd = """node -e 'require(\"./encrypt.js\").encrypt(\"{},{}\")'"""
-    cmd = 'node -e \"require(\'./encrypt.js\').encrypt(\'{}\',\'{}\')\"' #If fail, check quotes
-    pattern = r'\\n(.*)\\n'
+    cmd = """node -e 'require(\"./encrypt.js\").encrypt(\"{}\",\"{}\")'"""
+    #cmd = 'node -e \"require(\'./encrypt.js\').encrypt(\'{}\',\'{}\')\"' #If fail, check quotes
+    #pattern = r'\\n(.*)\\n'
+    pattern = r'b\'(.*)\\n'
     
  
     #privKey = w3.toHex(privKey)
@@ -406,9 +414,11 @@ def encryptMessage(message, publicKey):
 
 
 def getPubKeyfromSig(signedmessage, message):
-    #cmd = """node -e 'require(\"./recoverSig.js\").recoverPubKey(\"{},{}\")'"""
-    cmd = 'node -e \"require(\'./recoverSig.js\').recoverPubKey(\'{}\',\'{}\')\"' #If fail, check quotes 
-    pattern = r'\\n(.*)\\n'
+    cmd = """node -e 'require(\"./recoverSig.js\").recoverPubKey(\"{}\",\"{}\")'"""
+    #cmd = 'node -e \"require(\'./recoverSig.js\').recoverPubKey(\'{}\',\'{}\')\"' #If fail, check quotes 
+    #pattern = r'\\n(.*)\\n'
+    pattern = r'b\'(.*)\\n'
+
 
     output = subprocess.check_output(cmd.format(signedmessage, message), shell=True)
     print(cmd.format(signedmessage,message))
@@ -417,6 +427,28 @@ def getPubKeyfromSig(signedmessage, message):
     print(substring)
     return substring
 
+
+# In[22]:
+
+
+def decryptMessage(message, privKey):
+    cmd = """node -e 'require(\"./decrypt.js\").decrypt(\"{}\",\"{}\")'"""
+    #cmd = 'node -e \"require(\'./decrypt.js\').decrypt(\'{}\',\'{}\')\"' #If fail, check quotes
+    pattern = r'b\'(.*)\\n'
+    
+ 
+    privKey = w3.toHex(privKey)
+    #print(privKey)
+    output = subprocess.check_output(cmd.format(message, privKey), shell=True)
+    #print(output)
+
+    
+    
+    #signed_message = w3.eth.sign(privKey,text=message)
+    print(cmd.format(message,privKey))
+    substring = re.search(pattern, str(output)).group(1)
+    print(substring)
+    return substring
 
 # In[19]:
 
@@ -441,8 +473,7 @@ def getIBNPubKey():
 #For verification check of Enrollment to IBN
 def notifyEnrollment(tokenId):
     response = requests.get(
-    rpcURL+"/verifyEnrolled?name=" +my_account.address+"&tokenId=" +str(tokenId)+"&type=" +str("Client"),
-    verify=False
+    rpcURL+"/verifyEnrolled?name=" +my_account.address+"&tokenId=" +str(tokenId)+"&type=" +str("Provider"),    verify=False
     )
     print(response.text)
 
@@ -456,7 +487,7 @@ def createEnrollment(address):
 
     jsonobj = {
     "address": address,
-    "type": "User",
+    "type": "Service",
     "signature": signedMessage
      }
     print(jsonobj)
@@ -470,29 +501,6 @@ def createEnrollment(address):
     return createIdentity.text
     
     
-
-
-# In[22]:
-
-
-def decryptMessage(message, privKey):
-    #cmd = """node -e 'require(\"./encrypt.js\").encrypt(\"{},{}\")'"""
-    cmd = 'node -e \"require(\'./decrypt.js\').decrypt(\'{}\',\'{}\')\"' #If fail, check quotes
-    pattern = r'\\n(.*)\\n'
-    
- 
-    privKey = w3.toHex(privKey)
-    #print(privKey)
-    output = subprocess.check_output(cmd.format(message, privKey), shell=True)
-    #print(output)
-
-    
-    
-    #signed_message = w3.eth.sign(privKey,text=message)
-    print(cmd.format(message,privKey))
-    substring = re.search(pattern, str(output)).group(1)
-    print(substring)
-    return substring
 
 
 # In[23]:
@@ -516,10 +524,17 @@ def checkEnrolled(address):
     print("GETFULL", isEnrolled)
     myenroll = result[1]
     return myenroll
+#    _ziti_identities = filter(lambda p: p != '',
+#                          map(lambda s: s.strip(),
+#                              (getenv('ZITI_IDENTITIES') or "").split(';')))
+#    print("Identity: ", _ziti_identities, getenv('ZITI_IDENTITIES'))
+#    for identity in _ziti_identities:
+#        print("IdentityContent: ", identity)
+#        if identity != '':
+#            return True
+#    return False
 
-
-
-# %% For providing a token when connection starts
+##For providing a token when connection starts
 def giveMeToken():
 
     signedMessage = signMessage(my_account.address, my_account.privateKey) #Sign message to not expose the public address and to ensure proper identity
@@ -550,11 +565,7 @@ def verifyToken():
     verify=False,
     json = jsonobj
     )
-    print(response.text)
-
-
-
-    
+    print(response.text)  
 
 
 # In[25]:
@@ -562,7 +573,7 @@ def verifyToken():
 
 def restartRouter():
     serviceName = "ziti"
-    win32serviceutil.RestartService(serviceName)
+    #win32serviceutil.RestartService(serviceName)
     
 
 
@@ -571,7 +582,7 @@ def restartRouter():
 
 def startRouter():
     serviceName = "ziti"
-    win32serviceutil.StartService(serviceName)
+   # win32serviceutil.StartService(serviceName)
 
 
 # In[27]:
@@ -579,7 +590,7 @@ def startRouter():
 
 def stopRouter():
     serviceName = "ziti"
-    win32serviceutil.StopService(serviceName)
+    #win32serviceutil.StopService(serviceName)
 
 
 # In[28]:
@@ -587,32 +598,32 @@ def stopRouter():
 
 def routerStatus():
     serviceName = "ziti"
-    status = win32serviceutil.QueryServiceStatus(serviceName)
+   # status = win32serviceutil.QueryServiceStatus(serviceName)
     
-    service = None
-    try:
-        service = psutil.win_service_get(serviceName)
-        service = service.as_dict()
-        if service:
-            print("Service found: ", service)
-        else:
-            print("Service not found")
+    #service = None
+    #try:
+    #    service = psutil.win_service_get(serviceName)
+    #    service = service.as_dict()
+    #    if service:
+    #        print("Service found: ", service)
+    #    else:
+    #        print("Service not found")
 
-        if service and service['status'] == 'running':
-            print("Service is running")
-            return 1
-        if service and service['status'] == 'stop_pending':
-            print("Service is stopping")
-            return 2
+    #    if service and service['status'] == 'running':
+    #        print("Service is running")
+    #        return 1
+    #    if service and service['status'] == 'stop_pending':
+     #       print("Service is stopping")
+      #      return 2
 
-        else: 
-            print("Service is not running")
-            print("ROUTER IS", status)
-            return 3
+       # else: 
+       #     print("Service is not running")
+        #    print("ROUTER IS", status)
+        #    return 3
 
-    except Exception as ex:
+    #except Exception as ex:
         # raise psutil.NoSuchProcess if no service with such name exists
-        print(str(ex))
+     #   print(str(ex))
 
 
 
@@ -635,22 +646,14 @@ def collapse(layout, key, visible):
 
 def connecButtons():
     if isEnrolled:
-            if routerStatus() == 1:
-                window['-ISCONNECTED-'].update("Connected", text_color='green')
-                window['-SEC1-'].update(visible=False) #Pinned Column for button format
-                window['-SEC2-'].update(visible=True) #Pinned Column for button format
-                
-            else:
-                window['-ISCONNECTED-'].update("Not Connected", text_color='red')
-                window['-SEC2-'].update(visible=False) #Pinned Column for button format
-                window['-SEC1-'].update(visible=True) #Pinned Column for button format
+        window['-ISCONNECTED-'].update("Not Connected", text_color='red')
+        window['-SEC2-'].update(visible=False) #Pinned Column for button format
+        window['-SEC1-'].update(visible=True) #Pinned Column for button format
 
     
 
 
 # In[31]:
-
-
 
 
 if __name__ == '__main__':
@@ -730,7 +733,7 @@ if __name__ == '__main__':
     
         
     print(layout)
-    window = sg.Window('ZTClient', layout)
+    window = sg.Window('ZTAgent for Providers', layout)
     
 
     while True:  # Event Loop
@@ -869,6 +872,8 @@ if __name__ == '__main__':
             myOTT = getmyOTT(my_account.address)
             setApproval(ibnAddress)
             setSessionApproval(ibnAddress)
+            
+
 
             if (myOTT == 0 and isPerm(my_account.address)):
                 createEnrollment(my_account.address)
@@ -901,43 +906,47 @@ if __name__ == '__main__':
                 except Exception as e:
                         sg.popup("An error ocurred")
                         print("error ocurred", e)
-         
-        #Start the ziti-edge-tunnel service and connects to the overlay
+
         if event == '-CONNECT-':
-            
-            if routerStatus() == 1:
-                restartRouter()
-            elif routerStatus() == 3 :
-                startRouter()
-            while routerStatus() != 1: #Checks if the service is up (it takes time to come up)
-                event, values = window.read(100)
-                window['-ISCONNECTED-'].update("Connecting...", text_color='blue')
-            connecButtons()
+            print("WHYYY")
             verifyToken()
             giveMeToken()
-            
-            window['-ISCONNECTED-'].update("Connected", text_color='green')
-            
-            
-        #Stops the ziti-edge-tunnel service and disconnects from the overlay
-        if event == '-DISCONNECT-':
-            if routerStatus() == 1:
-                stopRouter()
-            while routerStatus() == 2: #Checks if the service is down
-                event, values = window.read(100)
-                window['-ISCONNECTED-'].update("Disconnecting...", text_color='red')
-            connecButtons()
-            window['-ISCONNECTED-'].update("Not Connected", text_color='red')
-            
-  
-                
 
-
-                
+          
             
     window.close()
 
             
+        #my_account = getBlockKey(file_exists)
+        #    try:
+        #        print(my_account.address)
+        #    except NameError as error:
+        #        print("There is no Ethereum account!!", error)
+        #    latest_block = w3.eth.get_block('latest')
+        #    print(latest_block)
+        #except:
+        #    print("Verify your Ethereum Account")
+
+
+# In[ ]:
+
+
+
+
+
+# In[32]:
+
+
+##id_json = ztenroll('eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbSI6Im90dCIsImV4cCI6MTY1OTg0MTA4NiwiaXNzIjoiaHR0cHM6Ly83Y2U3ZTQyNC02YTkyLTRmZjItOTQ1OS1lYmJiYTMyMzQ2ZmEucHJvZHVjdGlvbi5uZXRmb3VuZHJ5LmlvOjQ0MyIsImp0aSI6IjdhYjA5OWFlLWIzYzEtNGVhNC05OGY4LWM5Nzk4MjcwZjdhMCIsInN1YiI6ImxCLnNkMzIxZTIifQ.Ar_EM6dfp0QECKuRulNgGSroeVMy75FgN4LJIO8_w5uwCWVdZrvgvdeHh73E4WrnTxGXN8tZx0AwSzEa74A4FRiphIWOIPKyiAisgHgHv9TSxGbS0vpa-UEDSJN1QiVmFoC4fWj8nQhFDc9-Y0NW2BrK_N3XseoqSekZ4H-UxXZQuXe4tdO6ry0Q47jHl7gcRmadnt1-FkwAV0-T9i3xrjlkPQwDZsYrh_wG6W49l4jULEU6oDOfgyhHBvvcr1KoiMIgfqlJSGxWfoJQ6XBNP24wafNt8eHWxeoMGUDGGY098yFTDkmUrGY-RLysRF-g6AKZTOWczME9FzKy2KVkQHzweSG446ysRL04Jynvm6boKoofTqzpxA635dArsJxiFgEbz9FkRoRaLd4BZBjeM__Oy3kGSaJEVoTxzK67-AyIvRTLA4jyPxmMAeyOW_n7RGVXOkwFMvMw9Fcupl1q5U-ITheMJ5XyjHZ-wUnn3vaCDhzFJKbWPi23Kze9sVeRPOBYzfr80udGy10wbUr4qTrTz81kodFP-6JCZ9QpYx8Gyoa-beW0QUsAy7L8lg2FxW3PmL8AFrLiSKFGnaATIlz2O1DnrEjuxHhE0jrLQs8xWZmyBw72ssO_yaFsA2ng6FTNz3y9Hg1SWS8MlrehO7xR_cnZafQ54CBfowtzo60')
+
+
+# In[ ]:
+
+
+
+
+
+# In[ ]:
 
 
 
