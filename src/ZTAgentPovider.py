@@ -727,7 +727,7 @@ if __name__ == '__main__':
     
         
     print(layout)
-    window = sg.Window('ZTClient for Providers', layout)
+    window = sg.Window('ZTAgent for Providers', layout)
     
 
     while True:  # Event Loop
