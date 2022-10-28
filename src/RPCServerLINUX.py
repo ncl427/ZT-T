@@ -20,6 +20,7 @@ from email.message import EmailMessage
 from password_generator import PasswordGenerator
 from collections import namedtuple
 from datetime import datetime
+from multiprocessing import Value
 
 
 from dotenv import load_dotenv
@@ -346,7 +347,7 @@ def decryptMessage(message, privKey):
 # %%
 def recordPassword(empId, pssWd):
     check_sum = w3.toChecksumAddress(my_account._address)
-    trans = verify_instance.functions.updatePass(empId, pssWd).buildTransaction({"from": check_sum,"gasPrice": w3.eth.gas_price,"nonce": nonce,"chainId": chainId}) #build RAW transaction supported by BESU
+    trans = verify_instance.functions.updatePass(empId, pssWd).buildTransaction({"from": check_sum,"gasPrice": w3.eth.gas_price,"nonce": counter.value,"chainId": chainId}) #build RAW transaction supported by BESU
     updateNonce()
     signed_txn = w3.eth.account.sign_transaction(trans, my_account.privateKey) #Sign transaction using our own private key
     txn_hash = w3.eth.send_raw_transaction(signed_txn.rawTransaction) #Send transaction to BESU
@@ -358,7 +359,7 @@ def recordPassword(empId, pssWd):
 # %%
 def recordAddress(empId, address):
     check_sum = w3.toChecksumAddress(my_account._address)
-    trans = verify_instance.functions.updateAddress(empId, address).buildTransaction({"from": check_sum,"gasPrice": w3.eth.gas_price,"nonce": nonce,"chainId": chainId}) #build RAW transaction supported by BESU
+    trans = verify_instance.functions.updateAddress(empId, address).buildTransaction({"from": check_sum,"gasPrice": w3.eth.gas_price,"nonce": counter.value,"chainId": chainId}) #build RAW transaction supported by BESU
     updateNonce()
     signed_txn = w3.eth.account.sign_transaction(trans, my_account.privateKey) #Sign transaction using our own private key
     txn_hash = w3.eth.send_raw_transaction(signed_txn.rawTransaction) #Send transaction to BESU
@@ -368,7 +369,7 @@ def recordAddress(empId, address):
 # %%
 def recordPubKey(empId, pubKey):
     check_sum = w3.toChecksumAddress(my_account._address)
-    trans = verify_instance.functions.updatePubKey(empId, pubKey).buildTransaction({"from": check_sum,"gasPrice": w3.eth.gas_price,"nonce": nonce,"chainId": chainId}) #build RAW transaction supported by BESU
+    trans = verify_instance.functions.updatePubKey(empId, pubKey).buildTransaction({"from": check_sum,"gasPrice": w3.eth.gas_price,"nonce": counter.value,"chainId": chainId}) #build RAW transaction supported by BESU
     updateNonce()
     signed_txn = w3.eth.account.sign_transaction(trans, my_account.privateKey) #Sign transaction using our own private key
     txn_hash = w3.eth.send_raw_transaction(signed_txn.rawTransaction) #Send transaction to BESU
@@ -381,7 +382,7 @@ def addPermission(address):
     check_sum = w3.toChecksumAddress(my_account._address)
     tx = contract_instance.functions.addAccount(address).buildTransaction({'from': check_sum,
                                                                                "gasPrice": w3.eth.gas_price,
-                                                                               'nonce': nonce,
+                                                                               'nonce': counter.value,
                                                                                "chainId": chainId}) #build RAW transaction supported by BESU
     #del tx['maxPriorityFeePerGas']
     print(tx)
@@ -400,7 +401,7 @@ def sendEth(address):
           'value': w3.toWei(1, 'ether'),
           'gas': 2000000,
           'gasPrice': w3.eth.gas_price,
-          'nonce': nonce,
+          'nonce': counter.value,
           'chainId': chainId} #build RAW transaction supported by BESU
     #del tx['maxPriorityFeePerGas']
     print(tx)
@@ -430,7 +431,7 @@ def mintOTTNFT(address, endpointType, signature):
     print("Totalsupply", totalSupply, address, ott)
     tokenId = totalSupply+1
     print(tokenId)
-    trans = nftOTT_instance.functions.mint(address,tokenId,expiration,encryptedOTT).buildTransaction({"from": check_sum,"gasPrice": w3.eth.gas_price,"nonce": nonce,"chainId": chainId}) #build RAW transaction supported by BESU
+    trans = nftOTT_instance.functions.mint(address,tokenId,expiration,encryptedOTT).buildTransaction({"from": check_sum,"gasPrice": w3.eth.gas_price,"nonce": counter.value,"chainId": chainId}) #build RAW transaction supported by BESU
     updateNonce()
     signed_txn = w3.eth.account.sign_transaction(trans, my_account.privateKey) #Sign transaction using our own private key
     print(signed_txn.rawTransaction)
@@ -459,7 +460,7 @@ def mintSessionNFT(address, endpointType, identityInfo):
                 print("Totalsupply", totalSupply, address)
                 tokenId = totalSupply+1
                 print(tokenId)
-                trans = sessionToken_instance.functions.mint(address,tokenId,endpointType,metadata).buildTransaction({"from": check_sum,"gasPrice": w3.eth.gas_price,"nonce": nonce,"chainId": chainId}) #build RAW transaction supported by BESU
+                trans = sessionToken_instance.functions.mint(address,tokenId,endpointType,metadata).buildTransaction({"from": check_sum,"gasPrice": w3.eth.gas_price,"nonce": counter.value,"chainId": chainId}) #build RAW transaction supported by BESU
                 updateNonce()
                 signed_txn = w3.eth.account.sign_transaction(trans, my_account.privateKey) #Sign transaction using our own private key
                 print(signed_txn.rawTransaction)
@@ -472,7 +473,7 @@ def updateAccount(address, accountHash, enrollment, idType):
     check_sum = w3.toChecksumAddress(my_account._address)
     tx = contract_instance.functions.updateAccount(address, accountHash, enrollment, idType).buildTransaction({'from': check_sum,
                                                                                "gasPrice": w3.eth.gas_price,
-                                                                               'nonce': nonce,
+                                                                               'nonce': counter.value,
                                                                                "chainId": chainId}) #build RAW transaction supported by BESU
     #del tx['maxPriorityFeePerGas']
     print(tx)
@@ -487,18 +488,20 @@ def updateAccount(address, accountHash, enrollment, idType):
 
 # %%
 def updateNonce():
-    global nonce
     check_sum = w3.toChecksumAddress(my_account._address)
     thisNonce = w3.eth.get_transaction_count(check_sum)
    
+    ##global counter
+    print("Nonce is!!", thisNonce, counter)
     
-    print("Nonce is!!", thisNonce, nonce)
-
-    if thisNonce > nonce:
-        nonce = thisNonce
-    else:
-        nonce = nonce + 1
-    print("Nonce", nonce)
+    with counter.get_lock():
+        if thisNonce > counter.value:
+            counter.value = thisNonce
+        else:
+            counter.value += 1
+    myNonce = counter.value
+    print("Nonce", counter.value, counter, myNonce)
+    return myNonce
 
 
 # %%
@@ -584,7 +587,7 @@ def timetoEXP(timeinsecs):
     current_datetime = datetime.utcnow()
     current_timetuple = current_datetime.utctimetuple()
     current_timestamp = calendar.timegm(current_timetuple)
-    print(current_timestamp)
+    print("TOKEN EXPIRATION----------------", timeinsecs["exp"])
     current_timestamp = int(current_timestamp) + int(timeinsecs["exp"])
 
     print(current_timestamp)
@@ -665,7 +668,7 @@ def burnOTT(address, tokenId):
     tokensOwned = nftOTT_instance.functions.balanceOf(address).call() #Get the status of the account
     check_sum = w3.toChecksumAddress(my_account._address)
     print("Tokens Owned", tokensOwned)
-    trans = nftOTT_instance.functions.burn(tokenId).buildTransaction({"from": check_sum,"gasPrice": w3.eth.gas_price,"nonce": nonce,"chainId": chainId}) #build RAW transaction supported by BESU
+    trans = nftOTT_instance.functions.burn(tokenId).buildTransaction({"from": check_sum,"gasPrice": w3.eth.gas_price,"nonce": counter.value,"chainId": chainId}) #build RAW transaction supported by BESU
     updateNonce()
     signed_txn = w3.eth.account.sign_transaction(trans, my_account.privateKey) #Sign transaction using our own private key
     txn_hash = w3.eth.send_raw_transaction(signed_txn.rawTransaction) #Send transaction to BESU
@@ -677,7 +680,7 @@ def burnSessionToken(address, tokenId):
     tokensOwned = sessionToken_instance.functions.balanceOf(address).call() #Get the status of the account
     check_sum = w3.toChecksumAddress(my_account._address)
     print("Tokens Owned", tokensOwned)
-    trans = sessionToken_instance.functions.burn(tokenId).buildTransaction({"from": check_sum,"gasPrice": w3.eth.gas_price,"nonce": nonce,"chainId": chainId}) #build RAW transaction supported by BESU
+    trans = sessionToken_instance.functions.burn(tokenId).buildTransaction({"from": check_sum,"gasPrice": w3.eth.gas_price,"nonce": counter.value,"chainId": chainId}) #build RAW transaction supported by BESU
     updateNonce()
     signed_txn = w3.eth.account.sign_transaction(trans, my_account.privateKey) #Sign transaction using our own private key
     txn_hash = w3.eth.send_raw_transaction(signed_txn.rawTransaction) #Send transaction to BESU
@@ -890,7 +893,7 @@ if __name__ == '__main__':
     ctx = ssl.create_default_context() #secure ssl context for email
     
     w3.middleware_onion.inject(geth_poa_middleware, layer=0) #For compatibility with POA consensus chains
-    nonce = 0 #Need to find a better way for nonce tracking
+    counter = Value('i',0) #Cross process counter
     contract_instance = w3.eth.contract(address = permissionedAddress, abi = abi) #Creates a contract instance for the permissions
     nftOTT_instance = w3.eth.contract(address = nftOTT, abi = abiNFT) #Creates a contract instance for the OTT-NFT
     sessionToken_instance = w3.eth.contract(address = sessionNFT, abi = abiSessionNFT)
@@ -908,7 +911,7 @@ if __name__ == '__main__':
     try:
         my_account = getBlockKey(file_exists)
         check_sum = w3.toChecksumAddress(my_account._address)
-        nonce = w3.eth.get_transaction_count(check_sum)
+        counter.value = w3.eth.get_transaction_count(check_sum)
         print(my_account.address)
         #print(my_account.privateKey.hex())
         app.run(host='0.0.0.0', port=3003)
