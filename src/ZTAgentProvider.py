@@ -281,7 +281,7 @@ def eventFilter():
 def enroll(tokenId):
     if tokenId != 0:
         tokenURI = decryptOTT(tokenId) #Get the OTT information
-        with open(r"/home/ncl/VideoServer/myId.json", 'wb') as id_file:
+        with open(zitiTunnel, 'wb') as id_file:
             id_json = ztenroll(tokenURI)
             id_file.write(bytes(id_json, 'utf-8'))
         print("ENROLLMENT SUCCESS")
@@ -640,7 +640,7 @@ def collapse(layout, key, visible):
 
 def connecButtons():
     if isEnrolled:
-        window['-ISCONNECTED-'].update("Not Connected", text_color='red')
+        window['-ISCONNECTED-'].update("", text_color='red')
         window['-SEC2-'].update(visible=False) #Pinned Column for button format
         window['-SEC1-'].update(visible=True) #Pinned Column for button format
 
@@ -679,7 +679,7 @@ if __name__ == '__main__':
               [sg.Input(key='-IN-', password_char='*')],
               [sg.Button('Enter',  key='-ENTER-') ]]
     
-    connect = [[sg.Button('CONNECT', key='-CONNECT-', visible = True)]]
+    connect = [[sg.Button('REQUEST SESSION TOKENS', key='-CONNECT-', visible = True)]]
     
     discon  = [[sg.Button('DISCONNECT', key='-DISCONNECT-', visible = True)]]
     
