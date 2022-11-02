@@ -1,0 +1,81 @@
+def handle_event_add_service(event, authToken):
+    eventS = Web3.toJSON(event)
+    eventJSON = json.loads(eventS)
+    print(eventJSON)
+    service_id = str(eventJSON['args']['serviceId'])
+    service_name = eventJSON['args']['serviceName']  
+    address = eventJSON['args']['serviceConfig'][0].split(':')
+    if len(address) == 2:
+        serviceAddress = address[0]
+        service_port = int(address[1])
+    elif len(address) == 1:
+        serviceAddress = address
+        service_port = 8080
+    else:
+        print ("Address not added correctly. Default address and port used")
+        serviceAddress = '0.0.0.0'
+        service_port = 1000
+    print (serviceAddress, service_port)
+    
+    config_id = SERVICE_CONFIG_ADD_API(service_name+".config", 'g7cIWbcGg', serviceAddress,
+                                       service_port, authToken)
+    response = SERVICE_ADD_API(service_name, service_id, [config_id], authToken)
+    if (response != -1):
+        rows = response["data"]['id']
+        print ("Service Id: ", rows, "Config Id: ", config_id)
+
+# To add the config
+def SERVICE_CONFIG_ADD_API(config_name, config_type_id, address, port, authToken):
+    
+    APIurl = "https://172.18.102.169:1280/edge/management/v1/configs"
+    sessResponse = requests.post(
+        APIurl,
+        verify = False,
+        headers = {"zt-session": authToken, 'Content-Type': 'application/json'},
+        json = {
+                "encryptionRequired": True,
+                "configTypeId": config_type_id,
+                "data": { 
+                    "addresses": [address],
+                    "portRanges": [
+                        { "high":port, "low":port }
+                        ],
+                    "protocols": ["tcp"]
+                    },
+                "name": config_name
+                }
+        )
+    #print (sessResponse.text)
+    result = str(sessResponse).split("[")[1][:3]
+    #print (result, type(result))
+    if (result == '201'):
+        return json.loads(sessResponse.text)["data"]["id"]
+    else:
+        print ("SERVICE CONFIG VERIFY API error is: ", sessResponse, "\n", sessResponse.text)
+        return -1
+
+# To add the service
+def SERVICE_ADD_API(service_name, service_block_id, configs_list, authToken):
+    
+    # print (service_name, service_block_id, configs_list, authToken)
+    APIurl = "https://172.18.102.169:1280/edge/management/v1/services"
+    sessResponse = requests.post(
+        APIurl,
+        verify = False,
+        headers = {"zt-session": authToken, 'Content-Type': 'application/json'},
+        json = {"encryptionRequired": True, "name": service_name,
+                'blockId': service_block_id, 'configs': configs_list}
+        )
+    #print (sessResponse)
+    result = str(sessResponse).split("[")[1][:3]
+    #print (result, type(result))
+    if (result == '201'):
+        return json.loads(sessResponse.text)
+    elif (result == '401'):
+        authInfo = GET_AUTH_TOKEN()
+        authToken = authInfo['authToken']
+        return SERVICE_ADD_API(service_name, service_block_id, configs_list, authToken)
+    else:
+        print ("ADD SERVICE API error is: ", sessResponse)
+        return -1
+
