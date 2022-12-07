@@ -16,3 +16,7 @@ Used by both ZTAgent and RPC Server as helper functionality for encryption and d
 
 (Cleaning up is required on this folder)
 
+
+### If you have errors related to the Javascript functions ###
+*secp256k1 unavailable, reverting to browser version*
+Please run the noSECP256 versions of the python files.
