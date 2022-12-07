@@ -1,4 +1,4 @@
-### Read Me ###
+# Read Me #
 
 ## Main Function ##
 The main function creates the thread for each filter.
