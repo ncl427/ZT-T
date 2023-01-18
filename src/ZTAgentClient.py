@@ -640,11 +640,13 @@ def connecButtons():
                 window['-ISCONNECTED-'].update("Connected", text_color='green')
                 window['-SEC1-'].update(visible=False) #Pinned Column for button format
                 window['-SEC2-'].update(visible=True) #Pinned Column for button format
+                window['-SEC3-'].update(visible=True) #Pinned Column for button format
                 
             else:
                 window['-ISCONNECTED-'].update("Not Connected", text_color='red')
                 window['-SEC2-'].update(visible=False) #Pinned Column for button format
                 window['-SEC1-'].update(visible=True) #Pinned Column for button format
+                window['-SEC3-'].update(visible=True) #Pinned Column for button format
 
     
 
@@ -684,6 +686,9 @@ if __name__ == '__main__':
               [sg.Button('Enter',  key='-ENTER-') ]]
     
     connect = [[sg.Button('CONNECT', key='-CONNECT-', visible = True)]]
+
+    requestToken = [[sg.Button('REQUEST SESSION TOKENS', key='-REQUEST-', visible = True)]]
+
     
     discon  = [[sg.Button('DISCONNECT', key='-DISCONNECT-', visible = True)]]
     
@@ -695,7 +700,8 @@ if __name__ == '__main__':
               [sg.Text('Your enroll token expires in:', key='-TOKEN-'), sg.Text(key='-EXPIRE-')],
               [sg.Button('ENROll', key='-ENROLL-', visible = False)],
               [collapse(connect, '-SEC1-', False)],
-              [collapse(discon, '-SEC2-', False)]]
+              [collapse(discon, '-SEC2-', False)],
+              [collapse(requestToken, '-SEC3-', False)]]
     
     
     error   = [[sg.Text('Too many mistakes', text_color='red')],
@@ -929,6 +935,11 @@ if __name__ == '__main__':
                 window['-ISCONNECTED-'].update("Disconnecting...", text_color='red')
             connecButtons()
             window['-ISCONNECTED-'].update("Not Connected", text_color='red')
+
+        if event == '-REQUEST-':
+            print("WHYYY")
+            verifyToken()
+            giveMeToken()
             
   
                 
