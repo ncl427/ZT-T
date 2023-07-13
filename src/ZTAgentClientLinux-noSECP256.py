@@ -725,7 +725,7 @@ def connecButtons():
                     window['-SEC2-'].update(visible=True) #Pinned Column for button format
                     window['-SEC3-'].update(visible=True) #Pinned Column for button format
                 else:
-                    print("PENIS")
+                    print("Process has ended")
                     window['-ISCONNECTED-'].update("Not Connected", text_color='red')
                     window['-SEC2-'].update(visible=False) #Pinned Column for button format
                     window['-SEC1-'].update(visible=True) #Pinned Column for button format
