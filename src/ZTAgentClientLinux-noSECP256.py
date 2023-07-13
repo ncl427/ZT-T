@@ -31,6 +31,7 @@ from dotenv import load_dotenv
 from os import getenv
 
 import json
+import atexit
 import requests
 import os
 import asyncio
@@ -73,6 +74,7 @@ myOTT = 0
 decodedOTT = None
 myEmail = None
 isEnrolled = False
+process = None
 
 abiFolder = os.path.join(ROOT_DIR_LINUX, 'ABI')
 keyFolder = os.path.join(ROOT_DIR_LINUX, 'Keys')
@@ -571,6 +573,8 @@ def verifyToken():
 # %% Launch Ziti Tunnel on Linux
 
 def launchTunnel():
+    global process
+
     #try:
     #    cmd = ["sudo'", "ziti-edge-tunnel", "run", "-i", idFolder +"/myId.json" ]
     #    process = subprocess.Popen(
@@ -593,18 +597,37 @@ def launchTunnel():
     #stdout, stderr = process.communicate()
 
     #Popen(["/usr/bin/git", "commit", "-m", "Fixes a bug."])
-    cmd = "sudo ./ziti-edge-tunnel run -i" + idFolder +"/myId.json"
+    ##cmd = "sudo ./ziti-edge-tunnel run -i" + idFolder +"/myId.json"
 
 
-    print(cmd)
+    ##print(cmd)
 
-    output = subprocess.check_output(cmd, shell=True)
+    ##output = subprocess.check_output(cmd, shell=True)
     
-    print(output)
-  
+    ##print(output)
+    cmd = ["sudo", "./ziti-edge-tunnel", "run", "-i", idFolder +"/myId.json"]
+
+    print(' '.join(cmd))
+
+    # The Popen function returns an object that can be used to interact with the process
+    process = subprocess.Popen(cmd, preexec_fn=os.setpgrp)
+
+    print("Process ID:", process.pid)
+
+    ###return process  # Return the process object so it can be terminated later
+    atexit.register(cleanup)
+
 # In[25]:
 
+def cleanup():
+    global process
 
+    # If the process is still running when the script exits, terminate it
+    if process is not None:
+        #process.terminate()
+        cmd = ['sudo', 'kill', '-SIGTERM', str(process.pid)]
+        subprocess.run(cmd)
+        
 def restartRouter():
     serviceName = "ziti"
     #win32serviceutil.RestartService(serviceName)
@@ -625,9 +648,23 @@ def startRouter():
 def stopRouter():
     serviceName = "ziti"
     #win32serviceutil.StopService(serviceName)
+    
+
 
 
 # In[28]:
+
+def disconnect():
+    global process
+    cmd = ['sudo', 'kill', '-SIGTERM', str(process.pid)]
+    print(cmd)
+    subprocess.run(cmd)
+    time.sleep(1)
+    
+def is_process_running():
+    global process
+    # poll() returns None while the process is still running
+    return process.poll() is None
 
 
 def routerStatus():
@@ -680,10 +717,24 @@ def collapse(layout, key, visible):
 
 def connecButtons():
     if isEnrolled:
-        window['-ISCONNECTED-'].update("Not Connected", text_color='red')
-        window['-SEC2-'].update(visible=False) #Pinned Column for button format
-        window['-SEC1-'].update(visible=True) #Pinned Column for button format
-        window['-SEC3-'].update(visible=True) #Pinned Column for button format
+            if process is not None:
+                if is_process_running():
+                    print("Process is still running")
+                    window['-ISCONNECTED-'].update("Connected", text_color='green')
+                    window['-SEC1-'].update(visible=False) #Pinned Column for button format
+                    window['-SEC2-'].update(visible=True) #Pinned Column for button format
+                    window['-SEC3-'].update(visible=True) #Pinned Column for button format
+                else:
+                    print("PENIS")
+                    window['-ISCONNECTED-'].update("Not Connected", text_color='red')
+                    window['-SEC2-'].update(visible=False) #Pinned Column for button format
+                    window['-SEC1-'].update(visible=True) #Pinned Column for button format
+                    window['-SEC3-'].update(visible=True) #Pinned Column for button format
+            else:
+                window['-ISCONNECTED-'].update("Not Connected", text_color='red')
+                window['-SEC2-'].update(visible=False) #Pinned Column for button format
+                window['-SEC1-'].update(visible=True) #Pinned Column for button format
+                window['-SEC3-'].update(visible=True) #Pinned Column for button forma                
 
 
     
@@ -723,7 +774,7 @@ if __name__ == '__main__':
     
     connect = [[sg.Button('CONNECT', key='-CONNECT-', visible = True)]]
 
-    requestToken = [[sg.Button('REQUEST SESSION TOKENS', key='-CONNECT-', visible = True)]]
+    requestToken = [[sg.Button('REQUEST SESSION TOKENS', key='-REQUEST-', visible = True)]]
 
     
     discon  = [[sg.Button('DISCONNECT', key='-DISCONNECT-', visible = True)]]
@@ -794,6 +845,13 @@ if __name__ == '__main__':
 
         #print(file_exists)
         if event == sg.WIN_CLOSED or event == 'Exit':
+            if process is not None:
+                #process.terminate()
+                cmd = ['sudo', 'kill', '-SIGTERM', str(process.pid)]
+                print(cmd, process.pid)
+                subprocess.run(cmd)
+
+
             break
         if event == '-ENTER-':
             try:
@@ -950,9 +1008,19 @@ if __name__ == '__main__':
 
         if event == '-CONNECT-':
             print("WHYYY")
+
             verifyToken()
             giveMeToken()
             launchTunnel()
+            connecButtons()
+            window['-ISCONNECTED-'].update("Connected", text_color='green')
+
+            
+        #Stops the ziti-edge-tunnel service and disconnects from the overlay
+        if event == '-DISCONNECT-':
+            disconnect()
+            connecButtons()
+            window['-ISCONNECTED-'].update("Not Connected", text_color='red')
 
         if event == '-REQUEST-':
             print("WHYYY")
